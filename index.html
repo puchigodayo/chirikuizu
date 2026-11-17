@@ -913,11 +913,13 @@ $menu.addEventListener('click', () => {
 
 function animate() {
   requestAnimationFrame(animate);
-  // ズームイン時の感度低下を従来の2.1倍にする
-  // 通常倍率では従来どおり、強いズーム時も操作不能にならないよう下限を設定
-  const zoomRatio = camera.position.length() / BASE_CAMERA_DISTANCE;
-  const sensitivity = 1 - (1 - zoomRatio) * 2.1;
-  controls.rotateSpeed = BASE_ROTATE_SPEED * Math.max(0.05, sensitivity);
+  // 地球の画面上の見かけの大きさに合わせて回転感度を補正する。
+  // ズームインして地球が大きく表示されるほど、同じスワイプ量での回転角を小さくする。
+  // 透視投影での見かけの半径に基づくため、ズーム倍率に対して自然に追従する。
+  const distance = camera.position.length();
+  const apparentRadius = d => 1 / Math.sqrt(d * d - R * R);
+  const sensitivity = apparentRadius(BASE_CAMERA_DISTANCE) / apparentRadius(distance);
+  controls.rotateSpeed = BASE_ROTATE_SPEED * sensitivity;
 
   if (!isFlying) controls.update();
 
