@@ -1,58 +1,262 @@
-<DOCTYPE!=htnml>
+<!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8">
-  <title>計算機</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>球体地理クイズ</title>
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; overflow: hidden; background: #0b1020; font-family: system-ui, sans-serif; }
+  #ui {
+    position: fixed; top: 16px; left: 16px; right: 16px;
+    color: #fff; pointer-events: none;
+  }
+  #question {
+    font-size: 18px; font-weight: 700;
+    background: rgba(0,0,0,.65); padding: 10px 16px; border-radius: 10px;
+    display: inline-block;
+  }
+  #feedback {
+    margin-top: 8px; font-size: 15px; min-height: 22px;
+  }
+  #feedback.ok { color: #4ade80; }
+  #feedback.ng { color: #f87171; }
+  #score {
+    position: fixed; bottom: 16px; right: 16px; color: #cbd5e1;
+    font-size: 14px; background: rgba(0,0,0,.6); padding: 6px 12px; border-radius: 8px;
+  }
+</style>
 </head>
 <body>
-  <h1>計算機</h1>
-  <input type="number" id="numberInput" placeholder="数値を入力してください">
-  <button id="factorButton">素因数分解</button>
-  <button id="sqrtButton">平方根計算</button>
-  <div id="result"></div>
-  <script>
-    document.getElementById('factorButton').addEventListener('click', function() {
-      const number = parseInt(document.getElementById('numberInput').value);
-      if (isNaN(number) || number < 2) {
-        document.getElementById('result').innerText = '2以上の整数なｗｗｗｗ';
-        return; 
+<div id="ui">
+  <div id="question">読み込み中…</div>
+  <div id="feedback"></div>
+</div>
+<div id="score">スコア: 0 / 0</div>
 
-      }
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/",
+    "@turf/turf": "https://cdn.jsdelivr.net/npm/@turf/turf@6/+esm",
+    "topojson-client": "https://cdn.jsdelivr.net/npm/topojson-client@3/+esm"
+  }
+}
+</script>
 
-      const factors = [];
-      let n = number;
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import * as turf from '@turf/turf';
+import * as topojson from 'topojson-client';
 
-      for (let i = 2; i <= Math.sqrt(n); i++) {
-        while (n % i === 0) {
-          factors.push(i);
-          n /= i;
+// ===== シーン =====
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(45, innerWidth / innerHeight, 0.1, 1000);
+camera.position.z = 3.2;
+
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setSize(innerWidth, innerHeight);
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+document.body.appendChild(renderer.domElement);
+
+// ===== 地球（球体） =====
+const R = 1;
+const globe = new THREE.Mesh(
+  new THREE.SphereGeometry(R, 64, 32),
+  new THREE.MeshBasicMaterial({ color: 0x1e3a5f })
+);
+scene.add(globe);
+
+// ===== 操作 =====
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+controls.dampingFactor = 0.08;
+controls.minDistance = 1.3;
+controls.maxDistance = 6;
+controls.enablePan = false;
+controls.rotateSpeed = 0.6;
+
+// ===== 緯度経度 → 3D座標 =====
+function lonLatToVec3(lon, lat, radius) {
+  const phi = (90 - lat) * Math.PI / 180;
+  const theta = (lon + 180) * Math.PI / 180;
+  return new THREE.Vector3(
+    -radius * Math.sin(phi) * Math.cos(theta),
+    radius * Math.cos(phi),
+    radius * Math.sin(phi) * Math.sin(theta)
+  );
+}
+
+// ===== 国境線の描画 =====
+function buildBorders(geojson, radius) {
+  const positions = [];
+  const polygonsOf = (geom) =>
+    geom.type === 'Polygon' ? [geom.coordinates] :
+    geom.type === 'MultiPolygon' ? geom.coordinates : [];
+
+  for (const feature of geojson.features) {
+    if (!feature.geometry) continue;
+    for (const polygon of polygonsOf(feature.geometry)) {
+      for (const ring of polygon) {
+        for (let i = 0; i < ring.length - 1; i++) {
+          const v1 = lonLatToVec3(ring[i][0], ring[i][1], radius);
+          const v2 = lonLatToVec3(ring[i + 1][0], ring[i + 1][1], radius);
+          positions.push(v1.x, v1.y, v1.z, v2.x, v2.y, v2.z);
         }
       }
+    }
+  }
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+  return new THREE.LineSegments(
+    geo,
+    new THREE.LineBasicMaterial({ color: 0x93c5fd, transparent: true, opacity: 0.55 })
+  );
+}
 
-      if (n > 1) {
-        factors.push(n);
-      }
+// ===== タップ → 緯度経度 =====
+const raycaster = new THREE.Raycaster();
+const pointer = new THREE.Vector2();
 
-      document.getElementById('result').innerText = `素因数分解結果: ${factors.join(' × ')}`;
-    });
+function tapToLonLat(event) {
+  const rect = renderer.domElement.getBoundingClientRect();
+  pointer.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+  pointer.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+  raycaster.setFromCamera(pointer, camera);
+  const hits = raycaster.intersectObject(globe);
+  if (!hits.length) return null;
+  const p = hits[0].point.clone().normalize();
+  const lat = 90 - Math.acos(THREE.MathUtils.clamp(p.y, -1, 1)) * 180 / Math.PI;
+  let lon = Math.atan2(p.z, -p.x) * 180 / Math.PI;
+  if (lon > 180) lon -= 360;
+  return { lon, lat };
+}
 
-    document.getElementById('sqrtButton').addEventListener('click', function() {
-      const number = Number(document.getElementById('numberInput').value);
+// ===== 国判定（bboxで絞ってからTurf） =====
+function findCountry(lon, lat, countries) {
+  const pt = turf.point([lon, lat]);
+  for (const feature of countries.features) {
+    const b = feature._bbox;
+    if (b && (lon < b[0] || lon > b[2] || lat < b[1] || lat > b[3])) continue;
+    try {
+      if (turf.booleanPointInPolygon(pt, feature)) return feature;
+    } catch { /* 壊れたジオメトリはスキップ */ }
+  }
+  return null;
+}
 
-      if (isNaN(number)) {
-        document.getElementById('result').innerText = '数値を入力してください';
-        return;
-      }
+// ===== 日本語名マッピング（必要な国を追加） =====
+const NAME_JA = {
+  Azerbaijan: 'アゼルバイジャン',
+  Japan: '日本',
+  France: 'フランス',
+  Brazil: 'ブラジル',
+  Australia: 'オーストラリア',
+  Canada: 'カナダ',
+  Egypt: 'エジプト',
+  India: 'インド',
+  Italy: 'イタリア',
+  Kenya: 'ケニア',
+  Mexico: 'メキシコ',
+  Mongolia: 'モンゴル',
+  Norway: 'ノルウェー',
+  Peru: 'ペルー',
+  Turkey: 'トルコ',
+  Vietnam: 'ベトナム',
+};
 
-      if (number < 0) {
-        document.getElementById('result').innerText = '負の数の平方根は計算できません';
-        return;
-      }
+// ===== ゲーム状態 =====
+let countries = null;
+let target = null;
+let score = 0;
+let total = 0;
+let locked = false;
 
-      const result = Math.sqrt(number);
-      document.getElementById('result').innerText = `平方根: ${result}`;
-    });
-  </script>
+const $question = document.getElementById('question');
+const $feedback = document.getElementById('feedback');
+const $score = document.getElementById('score');
 
+function pickTarget() {
+  const list = countries.features.filter(
+    f => f.geometry && NAME_JA[f.properties?.name]
+  );
+  target = list[Math.floor(Math.random() * list.length)];
+  $question.textContent = `🌍 ${NAME_JA[target.properties.name]} はどこ？`;
+  $feedback.textContent = '';
+  $feedback.className = '';
+  locked = false;
+}
+
+// ===== 初期化 =====
+async function init() {
+  // world-atlas の TopoJSON を取得 → GeoJSON に変換
+  const topology = await fetch(
+    'https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json'
+  ).then(r => r.json());
+  countries = topojson.feature(topology, topology.objects.countries);
+
+  // bbox を事前計算
+  countries.features.forEach(f => {
+    if (f.geometry) {
+      try { f._bbox = turf.bbox(f); } catch { f._bbox = null; }
+    }
+  });
+
+  // 国境線を描画
+  scene.add(buildBorders(countries, R * 1.001));
+
+  pickTarget();
+  $score.textContent = `スコア: ${score} / ${total}`;
+}
+
+// ===== タップイベント =====
+let downPos = null;
+renderer.domElement.addEventListener('pointerdown', e => { downPos = { x: e.clientX, y: e.clientY }; });
+renderer.domElement.addEventListener('pointerup', e => {
+  if (!downPos) return;
+  const moved = Math.hypot(e.clientX - downPos.x, e.clientY - downPos.y);
+  downPos = null;
+  if (moved > 6 || locked || !countries) return; // ドラッグ回転は無視
+
+  const hit = tapToLonLat(e);
+  if (!hit) return;
+
+  const picked = findCountry(hit.lon, hit.lat, countries);
+  total++;
+
+  if (!picked) {
+    $feedback.textContent = '海の上です。陸地をタップしてね。';
+    $feedback.className = 'ng';
+  } else if (picked === target) {
+    score++;
+    $feedback.textContent = `⭕ 正解！ ${NAME_JA[target.properties.name]} です。`;
+    $feedback.className = 'ok';
+    locked = true;
+    setTimeout(pickTarget, 1200);
+  } else {
+    const pickedName = NAME_JA[picked.properties?.name] || picked.properties?.name || '不明な国';
+    $feedback.textContent = `❌ そこは ${pickedName}。もう一度探してみよう。`;
+    $feedback.className = 'ng';
+  }
+  $score.textContent = `スコア: ${score} / ${total}`;
+});
+
+// ===== アニメーション =====
+function animate() {
+  requestAnimationFrame(animate);
+  controls.update();
+  renderer.render(scene, camera);
+}
+
+window.addEventListener('resize', () => {
+  camera.aspect = innerWidth / innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth, innerHeight);
+});
+
+init().then(animate);
+</script>
 </body>
 </html>
