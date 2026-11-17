@@ -7,31 +7,120 @@
 <style>
   * { box-sizing: border-box; }
   body { margin: 0; overflow: hidden; background: #0b1020; font-family: system-ui, sans-serif; }
-  #ui {
-    position: fixed; top: 16px; left: 16px; right: 16px;
-    color: #fff; pointer-events: none;
+
+  #menu-screen {
+    position: fixed; inset: 0;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    background: rgba(11, 16, 32, 0.85);
+    backdrop-filter: blur(4px);
+    z-index: 200; color: #fff;
+    transition: opacity 0.8s ease;
+    cursor: pointer;
   }
-  #question {
-    font-size: 18px; font-weight: 700;
-    background: rgba(0,0,0,.65); padding: 10px 16px; border-radius: 10px;
-    display: inline-block;
+  #menu-screen h1 {
+    font-size: clamp(2rem, 6vw, 4rem);
+    letter-spacing: 0.2em; margin-bottom: 2rem; font-weight: 900;
+    background: linear-gradient(135deg, #60a5fa, #a78bfa);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    text-shadow: 0 0 40px rgba(96, 165, 250, 0.3);
   }
-  #feedback {
-    margin-top: 8px; font-size: 15px; min-height: 22px;
+  #menu-screen .start-text {
+    font-size: clamp(0.9rem, 2vw, 1.2rem);
+    letter-spacing: 0.3em;
+    animation: pulse 1.5s infinite;
   }
-  #feedback.ok { color: #4ade80; }
-  #feedback.ng { color: #f87171; }
+  #menu-screen .loading { font-size: 0.9rem; color: #94a3b8; letter-spacing: 0.1em; }
+  @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+  #menu-screen.hidden { opacity: 0; pointer-events: none; }
+
+  .announce-style {
+    position: fixed; top: 0; left: 0; z-index: 100;
+    font-weight: 900; font-size: clamp(2rem, 6vw, 4.5rem); line-height: 1;
+    text-shadow: 0 4px 24px rgba(0, 0, 0, 0.9), 0 0 60px rgba(59, 130, 246, 0.4);
+    transform-origin: top left; pointer-events: none; white-space: nowrap;
+    font-family: 'Helvetica Neue', Arial, 'Hiragino Kaku Gothic ProN', sans-serif;
+    letter-spacing: 0.05em;
+  }
+
+  #question-title {
+    color: #fff;
+    transition: top 0.6s cubic-bezier(0.25, 0.8, 0.25, 1),
+                left 0.6s cubic-bezier(0.25, 0.8, 0.25, 1),
+                transform 0.6s cubic-bezier(0.25, 0.8, 0.25, 1);
+    opacity: 0;
+  }
+  #question-title.center {
+    top: 50vh; left: 50vw;
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 1;
+  }
+  #question-title.corner {
+    top: 20px; left: 20px;
+    transform: translate(0, 0) scale(0.35);
+    opacity: 1;
+  }
+  #question-title.no-transition { transition: none !important; }
+
+  #hint-text {
+    color: #fbbf24;
+    transition: top 0.6s cubic-bezier(0.25, 0.8, 0.25, 1),
+                left 0.6s cubic-bezier(0.25, 0.8, 0.25, 1),
+                transform 0.6s cubic-bezier(0.25, 0.8, 0.25, 1),
+                opacity 0.3s ease;
+    opacity: 0;
+  }
+  #hint-text.center {
+    top: 50vh; left: 50vw;
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 1;
+  }
+  #hint-text.corner {
+    top: 76px; left: 20px;
+    transform: translate(0, 0) scale(0.35);
+    opacity: 1;
+  }
+  #hint-text.no-transition { transition: none !important; }
+
+  #center-msg {
+    position: fixed; top: 50%; left: 50%;
+    transform: translate(-50%, -50%) scale(0.9);
+    font-size: clamp(1.5rem, 5vw, 4rem); font-weight: 900;
+    font-family: 'Helvetica Neue', Arial, 'Hiragino Kaku Gothic ProN', sans-serif;
+    text-shadow: 0 4px 24px rgba(0,0,0,0.9);
+    opacity: 0; transition: opacity 0.3s, transform 0.3s;
+    pointer-events: none; z-index: 150; text-align: center; width: 90vw;
+    letter-spacing: 0.05em;
+  }
+  #center-msg.show {
+    opacity: 1; transform: translate(-50%, -50%) scale(1);
+  }
+
+  #time-gauge-wrap {
+    position: fixed; top: 56px; left: 20px;
+    width: 180px; height: 8px;
+    background: rgba(255,255,255,0.2);
+    border-radius: 4px; overflow: hidden; z-index: 100;
+    opacity: 0; transition: opacity 0.3s;
+  }
+  #time-gauge-wrap.active { opacity: 1; }
+  #time-gauge {
+    height: 100%; width: 100%; background: #4ade80;
+    transform-origin: left;
+  }
+
   #score {
-    position: fixed; bottom: 16px; right: 16px; color: #cbd5e1;
-    font-size: 14px; background: rgba(0,0,0,.6); padding: 6px 12px; border-radius: 8px;
+    position: fixed; bottom: 16px; right: 16px; color: #cbd5e1; font-size: 14px;
+    background: rgba(0,0,0,.6); padding: 6px 12px; border-radius: 8px;
   }
 </style>
 </head>
 <body>
-<div id="ui">
-  <div id="question">読み込み中…</div>
-  <div id="feedback"></div>
-</div>
+<div id="menu-screen"><div class="loading">LOADING...</div></div>
+<div id="question-title" class="announce-style"></div>
+<div id="time-gauge-wrap"><div id="time-gauge"></div></div>
+<div id="hint-text" class="announce-style"></div>
+<div id="center-msg"></div>
 <div id="score">スコア: 0 / 0</div>
 
 <script type="importmap">
@@ -51,7 +140,6 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import * as turf from '@turf/turf';
 import * as topojson from 'topojson-client';
 
-// ===== シーン =====
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(45, innerWidth / innerHeight, 0.1, 1000);
 camera.position.z = 3.2;
@@ -61,15 +149,57 @@ renderer.setSize(innerWidth, innerHeight);
 renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
 document.body.appendChild(renderer.domElement);
 
-// ===== 地球（球体） =====
 const R = 1;
+const maxTexSize = renderer.capabilities.maxTextureSize;
+const MAP_W = Math.min(8192, maxTexSize);
+const MAP_H = MAP_W / 2;
+
+const mapCanvas = document.createElement('canvas');
+mapCanvas.width = MAP_W; mapCanvas.height = MAP_H;
+const mapCtx = mapCanvas.getContext('2d');
+
+const baseCanvas = document.createElement('canvas');
+baseCanvas.width = MAP_W; baseCanvas.height = MAP_H;
+const baseCtx = baseCanvas.getContext('2d');
+
+const mapTexture = new THREE.CanvasTexture(mapCanvas);
+mapTexture.colorSpace = THREE.SRGBColorSpace;
+mapTexture.anisotropy = renderer.capabilities.getMaxAnisotropy();
+
 const globe = new THREE.Mesh(
-  new THREE.SphereGeometry(R, 64, 32),
-  new THREE.MeshBasicMaterial({ color: 0x1e3a5f })
+  new THREE.SphereGeometry(R, 96, 48),
+  new THREE.MeshBasicMaterial({ map: mapTexture })
 );
 scene.add(globe);
 
-// ===== 操作 =====
+// ===== グロー用レイヤー =====
+const GLOW_W = 2048, GLOW_H = 1024;
+const glowCanvas = document.createElement('canvas');
+glowCanvas.width = GLOW_W; glowCanvas.height = GLOW_H;
+const glowCtx = glowCanvas.getContext('2d');
+const glowTexture = new THREE.CanvasTexture(glowCanvas);
+glowTexture.colorSpace = THREE.SRGBColorSpace;
+
+const glowMaterial = new THREE.MeshBasicMaterial({
+  map: glowTexture,
+  transparent: true,
+  opacity: 0,
+  blending: THREE.AdditiveBlending,
+  depthWrite: false,
+  side: THREE.FrontSide,
+});
+const glowMesh = new THREE.Mesh(
+  new THREE.SphereGeometry(R * 1.004, 64, 32),
+  glowMaterial
+);
+glowMesh.visible = false;
+scene.add(glowMesh);
+
+const glowToXY = (lon, lat) => [
+  (lon + 180) / 360 * GLOW_W,
+  (90 - lat) / 180 * GLOW_H
+];
+
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
 controls.dampingFactor = 0.08;
@@ -78,7 +208,6 @@ controls.maxDistance = 6;
 controls.enablePan = false;
 controls.rotateSpeed = 0.6;
 
-// ===== 緯度経度 → 3D座標 =====
 function lonLatToVec3(lon, lat, radius) {
   const phi = (90 - lat) * Math.PI / 180;
   const theta = (lon + 180) * Math.PI / 180;
@@ -89,34 +218,645 @@ function lonLatToVec3(lon, lat, radius) {
   );
 }
 
-// ===== 国境線の描画 =====
-function buildBorders(geojson, radius) {
-  const positions = [];
-  const polygonsOf = (geom) =>
-    geom.type === 'Polygon' ? [geom.coordinates] :
-    geom.type === 'MultiPolygon' ? geom.coordinates : [];
+function vec3ToLonLat(p) {
+  const n = p.clone().normalize();
+  const lat = 90 - Math.acos(THREE.MathUtils.clamp(n.y, -1, 1)) * 180 / Math.PI;
+  const lon = Math.atan2(-n.z, n.x) * 180 / Math.PI;
+  return { lon, lat };
+}
 
-  for (const feature of geojson.features) {
-    if (!feature.geometry) continue;
-    for (const polygon of polygonsOf(feature.geometry)) {
-      for (const ring of polygon) {
-        for (let i = 0; i < ring.length - 1; i++) {
-          const v1 = lonLatToVec3(ring[i][0], ring[i][1], radius);
-          const v2 = lonLatToVec3(ring[i + 1][0], ring[i + 1][1], radius);
-          positions.push(v1.x, v1.y, v1.z, v2.x, v2.y, v2.z);
-        }
+const COLORS = { ocean: '#16304d', land: '#4d7a5c', border: '#a5c8f0', correct: '#22c55e', wrong: '#ef4444' };
+const toXY = (lon, lat) => [ (lon + 180) / 360 * MAP_W, (90 - lat) / 180 * MAP_H ];
+
+function unwrapRing(ring) {
+  if (!ring.length) return [];
+  const out = [[ring[0][0], ring[0][1]]];
+  for (let i = 1; i < ring.length; i++) {
+    let lon = ring[i][0];
+    const prev = out[out.length - 1][0];
+    while (lon - prev > 180) lon -= 360;
+    while (lon - prev < -180) lon += 360;
+    out.push([lon, ring[i][1]]);
+  }
+  return out;
+}
+
+function getPolygons(geom) {
+  if (!geom) return [];
+  if (geom.type === 'Polygon') return [geom.coordinates];
+  if (geom.type === 'MultiPolygon') return geom.coordinates;
+  return [];
+}
+
+function pathRing(ctx, ring, xyFn) {
+  const u = unwrapRing(ring);
+  let minLat = Infinity, maxLon = -Infinity, minLon = Infinity;
+  for (const [lon, lat] of u) {
+    if (lat < minLat) minLat = lat;
+    if (lon > maxLon) maxLon = lon;
+    if (lon < minLon) minLon = lon;
+  }
+  const enclosesSouthPole = minLat < -60 && (maxLon - minLon) > 180;
+  const first = u[0], last = u[u.length - 1];
+
+  for (const off of [-360, 0, 360]) {
+    ctx.moveTo(...xyFn(u[0][0] + off, u[0][1]));
+    for (let i = 1; i < u.length; i++) ctx.lineTo(...xyFn(u[i][0] + off, u[i][1]));
+    if (enclosesSouthPole) {
+      ctx.lineTo(...xyFn(last[0] + off, -90));
+      ctx.lineTo(...xyFn(first[0] + off, -90));
+    }
+    ctx.closePath();
+  }
+}
+
+function fillFeature(ctx, feature, color) {
+  ctx.fillStyle = color;
+  for (const poly of getPolygons(feature.geometry)) {
+    ctx.beginPath();
+    for (const ring of poly) pathRing(ctx, ring, toXY);
+    ctx.fill('evenodd');
+  }
+}
+
+function strokeFeature(ctx, feature, color, lw = 1) {
+  ctx.strokeStyle = color; ctx.lineWidth = lw;
+  for (const poly of getPolygons(feature.geometry)) {
+    for (const ring of poly) {
+      const u = unwrapRing(ring);
+      for (const off of [-360, 0, 360]) {
+        ctx.beginPath();
+        ctx.moveTo(...toXY(u[0][0] + off, u[0][1]));
+        for (let i = 1; i < u.length; i++) ctx.lineTo(...toXY(u[i][0] + off, u[i][1]));
+        ctx.stroke();
       }
     }
   }
-  const geo = new THREE.BufferGeometry();
-  geo.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
-  return new THREE.LineSegments(
-    geo,
-    new THREE.LineBasicMaterial({ color: 0x93c5fd, transparent: true, opacity: 0.55 })
-  );
 }
 
-// ===== タップ → 緯度経度 =====
+function drawGlowFor(feature, color) {
+  glowCtx.clearRect(0, 0, GLOW_W, GLOW_H);
+  glowCtx.save();
+
+  // 塗りつぶし + ぼかし
+  glowCtx.shadowColor = color;
+  glowCtx.shadowBlur = 40;
+  glowCtx.fillStyle = color;
+  for (const poly of getPolygons(feature.geometry)) {
+    glowCtx.beginPath();
+    for (const ring of poly) pathRing(glowCtx, ring, glowToXY);
+    glowCtx.fill('evenodd');
+  }
+
+  // 輪郭線にも発光を重ねる
+  glowCtx.strokeStyle = '#ffffff';
+  glowCtx.lineWidth = 2;
+  glowCtx.shadowColor = color;
+  glowCtx.shadowBlur = 25;
+  for (const poly of getPolygons(feature.geometry)) {
+    for (const ring of poly) {
+      const u = unwrapRing(ring);
+      for (const off of [-360, 0, 360]) {
+        glowCtx.beginPath();
+        glowCtx.moveTo(...glowToXY(u[0][0] + off, u[0][1]));
+        for (let i = 1; i < u.length; i++) glowCtx.lineTo(...glowToXY(u[i][0] + off, u[i][1]));
+        glowCtx.stroke();
+      }
+    }
+  }
+
+  glowCtx.restore();
+  glowTexture.needsUpdate = true;
+}
+
+let glowActive = false;
+let glowStartTime = 0;
+
+function startGlow(feature, color) {
+  drawGlowFor(feature, color);
+  glowMesh.visible = true;
+  glowActive = true;
+  glowStartTime = performance.now();
+}
+
+function stopGlow() {
+  glowActive = false;
+  glowMesh.visible = false;
+  glowMaterial.opacity = 0;
+}
+
+let countries = null;
+let target = null;
+let score = 0, total = 0;
+let state = 'menu';
+let isLocked = true;
+const wrongMarks = new Set();
+let correctMark = null;
+
+let timeLeft = 30;
+let timerRunning = false;
+let timerId = null;
+let lastTick = 0;
+let hint1Shown = false;
+let hint2Shown = false;
+
+let isFlying = false;
+
+// ★修正：ズーム切り替えをコサイン補間で滑らかに
+function flyTo(lon, lat, duration = 1000, options = {}) {
+  const { zoomOutTo = null, targetDist = null } = options;
+  return new Promise(resolve => {
+    isFlying = true;
+    controls.enabled = false;
+
+    const startPos = camera.position.clone();
+    const startLL = vec3ToLonLat(startPos);
+    const startDist = startPos.length();
+    const finalDist = targetDist != null ? targetDist : startDist;
+
+    let dLon = lon - startLL.lon;
+    while (dLon > 180) dLon -= 360;
+    while (dLon < -180) dLon += 360;
+
+    const startTime = performance.now();
+
+    function step(now) {
+      const t = Math.min(1, (now - startTime) / duration);
+      const ease = t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
+      const curLon = startLL.lon + dLon * ease;
+      const curLat = startLL.lat + (lat - startLL.lat) * ease;
+
+      let curDist;
+      if (zoomOutTo != null) {
+        // 前半: コサイン補間でスムーズにズームアウト
+        // 後半: コサイン補間でスムーズにズームイン
+        // どちらも端点で速度0になるので切り替えが滑らか
+        if (t < 0.5) {
+          const tt = t * 2;
+          const ee = (1 - Math.cos(Math.PI * tt)) / 2;
+          curDist = startDist + (zoomOutTo - startDist) * ee;
+        } else {
+          const tt = (t - 0.5) * 2;
+          const ee = (1 - Math.cos(Math.PI * tt)) / 2;
+          curDist = zoomOutTo + (finalDist - zoomOutTo) * ee;
+        }
+      } else {
+        curDist = startDist + (finalDist - startDist) * ease;
+      }
+
+      camera.position.copy(lonLatToVec3(curLon, curLat, curDist));
+      camera.lookAt(0, 0, 0);
+
+      if (t < 1) {
+        requestAnimationFrame(step);
+      } else {
+        isFlying = false;
+        controls.enabled = !isLocked;
+        controls.update();
+        resolve();
+      }
+    }
+    requestAnimationFrame(step);
+  });
+}
+
+function getCountryCenter(feature) {
+  try {
+    const c = turf.center(feature);
+    return { lon: c.geometry.coordinates[0], lat: c.geometry.coordinates[1] };
+  } catch {
+    if (feature._bbox) {
+      return {
+        lon: (feature._bbox[0] + feature._bbox[2]) / 2,
+        lat: (feature._bbox[1] + feature._bbox[3]) / 2
+      };
+    }
+    return { lon: 0, lat: 0 };
+  }
+}
+
+const FALLBACK_JA = {
+  Japan: '日本', China: '中国', 'United States of America': 'アメリカ合衆国', Russia: 'ロシア',
+  France: 'フランス', Germany: 'ドイツ', 'United Kingdom': 'イギリス', Italy: 'イタリア',
+  Canada: 'カナダ', Australia: 'オーストラリア', Brazil: 'ブラジル', India: 'インド',
+  'South Korea': '韓国', 'North Korea': '北朝鮮', Spain: 'スペイン', Mexico: 'メキシコ',
+  Indonesia: 'インドネシア', Turkey: 'トルコ', 'Saudi Arabia': 'サウジアラビア',
+  Argentina: 'アルゼンチン', Egypt: 'エジプト', 'South Africa': '南アフリカ',
+  Nigeria: 'ナイジェリア', Iran: 'イラン', Thailand: 'タイ', Vietnam: 'ベトナム',
+  Philippines: 'フィリピン', Malaysia: 'マレーシア', Pakistan: 'パキスタン',
+  Bangladesh: 'バングラデシュ', Colombia: 'コロンビア', Chile: 'チリ', Peru: 'ペルー',
+  Venezuela: 'ベネズエラ', Ecuador: 'エクアドル', Bolivia: 'ボリビア', Paraguay: 'パラグアイ',
+  Uruguay: 'ウルグアイ', Cuba: 'キューバ', Guatemala: 'グアテマラ', Honduras: 'ホンジュラス',
+  'El Salvador': 'エルサルバドル', Nicaragua: 'ニカラグア', 'Costa Rica': 'コスタリカ',
+  Panama: 'パナマ', 'Dominican Republic': 'ドミニカ共和国', Haiti: 'ハイチ', Jamaica: 'ジャマイカ',
+  Ukraine: 'ウクライナ', Poland: 'ポーランド', Romania: 'ルーマニア', Netherlands: 'オランダ',
+  Belgium: 'ベルギー', Czechia: 'チェコ', Greece: 'ギリシャ', Portugal: 'ポルトガル',
+  Sweden: 'スウェーデン', Hungary: 'ハンガリー', Austria: 'オーストリア', Switzerland: 'スイス',
+  Bulgaria: 'ブルガリア', Denmark: 'デンマーク', Finland: 'フィンランド', Slovakia: 'スロバキア',
+  Norway: 'ノルウェー', Ireland: 'アイルランド', Croatia: 'クロアチア', Moldova: 'モルドバ',
+  Bosnia: 'ボスニア・ヘルツェゴビナ', Albania: 'アルバニア', Lithuania: 'リトアニア',
+  Slovenia: 'スロベニア', Latvia: 'ラトビア', Estonia: 'エストニア', Macedonia: '北マケドニア',
+  Montenegro: 'モンテネグロ', Luxembourg: 'ルクセンブルク', Kosovo: 'コソボ', Malta: 'マルタ',
+  Iceland: 'アイスランド', Belarus: 'ベラルーシ', Georgia: 'ジョージア', Armenia: 'アルメニア',
+  Azerbaijan: 'アゼルバイジャン', Cyprus: 'キプロス',
+  Myanmar: 'ミャンマー', 'Sri Lanka': 'スリランカ', Nepal: 'ネパール', Bhutan: 'ブータン',
+  Mongolia: 'モンゴル', Kazakhstan: 'カザフスタン', Uzbekistan: 'ウズベキスタン',
+  Turkmenistan: 'トルクメニスタン', Kyrgyzstan: 'キルギス', Tajikistan: 'タジキスタン',
+  Afghanistan: 'アフガニスタン', Iraq: 'イラク', Syria: 'シリア', Jordan: 'ヨルダン',
+  Lebanon: 'レバノン', Israel: 'イスラエル', Kuwait: 'クウェート', Qatar: 'カタール',
+  'United Arab Emirates': 'アラブ首長国連邦', Oman: 'オマーン', Yemen: 'イエメン',
+  Cambodia: 'カンボジア', Laos: 'ラオス', Brunei: 'ブルネイ', 'Timor-Leste': '東ティモール',
+  'Papua New Guinea': 'パプアニューギニア', 'New Zealand': 'ニュージーランド', Fiji: 'フィジー',
+  'Solomon Islands': 'ソロモン諸島', Vanuatu: 'バヌアツ', Samoa: 'サモア',
+  Algeria: 'アルジェリア', Morocco: 'モロッコ', Tunisia: 'チュニジア', Libya: 'リビア',
+  Sudan: 'スーダン', 'South Sudan': '南スーダン', Ethiopia: 'エチオピア', Kenya: 'ケニア',
+  Tanzania: 'タンザニア', Uganda: 'ウガンダ', Ghana: 'ガーナ', 'Ivory Coast': 'コートジボワール',
+  Senegal: 'セネガル', Mali: 'マリ', 'Burkina Faso': 'ブルキナファソ', Niger: 'ニジェール',
+  Chad: 'チャド', Cameroon: 'カメルーン', 'DR Congo': 'コンゴ民主共和国',
+  Congo: 'コンゴ共和国', Angola: 'アンゴラ', Zambia: 'ザンビア', Zimbabwe: 'ジンバブエ',
+  Mozambique: 'モザンビーク', Madagascar: 'マダガスカル', Namibia: 'ナミビア',
+  Botswana: 'ボツワナ', Somalia: 'ソマリア', Somaliland: 'ソマリランド', Eritrea: 'エリトリア',
+  'Central African Republic': '中央アフリカ共和国', Gabon: 'ガボン', 'Equatorial Guinea': '赤道ギニア',
+  'Guinea-Bissau': 'ギニアビサウ', Guinea: 'ギニア', 'Sierra Leone': 'シエラレオネ',
+  Liberia: 'リベリア', Togo: 'トーゴ', Benin: 'ベニン', Mauritania: 'モーリタニア',
+  'Western Sahara': '西サハラ', Lesotho: 'レソト', Eswatini: 'エスワティニ', Malawi: 'マラウイ',
+  Rwanda: 'ルワンダ', Burundi: 'ブルンジ', Djibouti: 'ジブチ',
+  Greenland: 'グリーンランド', 'French Guiana': 'フランス領ギアナ', 'New Caledonia': 'ニューカレドニア',
+  'Puerto Rico': 'プエルトリコ', 'Falkland Islands': 'フォークランド諸島',
+  Antarctica: '南極大陸',
+};
+
+let jaNames = {};
+let regions = {};
+
+function normalizeId(id) {
+  if (id === undefined || id === null) return null;
+  return String(id).padStart(3, '0');
+}
+
+async function loadTranslations() {
+  try {
+    const data = await fetch('https://cdn.jsdelivr.net/npm/world-countries@4.0.0/countries.json').then(r => r.json());
+    data.forEach(c => {
+      if (c.ccn3) {
+        const key = normalizeId(c.ccn3);
+        if (c.translations?.ja?.common) jaNames[key] = c.translations.ja.common;
+        if (c.region) regions[key] = c.region;
+      }
+      if (c.cca3) {
+        if (c.translations?.ja?.common) jaNames[c.cca3] = c.translations.ja.common;
+        if (c.region) regions[c.cca3] = c.region;
+      }
+    });
+  } catch (e) {
+    console.warn('翻訳データの取得に失敗しました。', e);
+  }
+}
+
+function getJapaneseName(feature) {
+  if (!feature) return '';
+  const idKey = normalizeId(feature.id);
+  if (idKey && jaNames[idKey]) return jaNames[idKey];
+  if (feature.properties?.iso_a3 && jaNames[feature.properties.iso_a3]) return jaNames[feature.properties.iso_a3];
+  const name = feature.properties?.name;
+  return FALLBACK_JA[name] || name || '不明な国';
+}
+
+function drawBaseMap() {
+  baseCtx.fillStyle = COLORS.ocean;
+  baseCtx.fillRect(0, 0, MAP_W, MAP_H);
+
+  for (const f of countries.features) if (f.geometry) fillFeature(baseCtx, f, COLORS.land);
+
+  const lw = Math.max(1, MAP_W / 4096);
+  for (const f of countries.features) if (f.geometry) strokeFeature(baseCtx, f, COLORS.border, lw);
+}
+
+function redrawMap() {
+  mapCtx.clearRect(0, 0, MAP_W, MAP_H);
+  mapCtx.drawImage(baseCanvas, 0, 0);
+
+  const lw = Math.max(1, MAP_W / 4096);
+  for (const f of wrongMarks) {
+    fillFeature(mapCtx, f, COLORS.wrong);
+    strokeFeature(mapCtx, f, COLORS.border, lw);
+  }
+  if (correctMark) {
+    fillFeature(mapCtx, correctMark, COLORS.correct);
+    strokeFeature(mapCtx, correctMark, COLORS.border, lw);
+  }
+
+  mapTexture.needsUpdate = true;
+}
+
+function findCountry(lon, lat) {
+  const pt = turf.point([lon, lat]);
+  for (const f of countries.features) {
+    const b = f._bbox;
+    if (b && (lon < b[0] - 0.5 || lon > b[2] + 0.5 || lat < b[1] - 0.5 || lat > b[3] + 0.5)) continue;
+    try { if (turf.booleanPointInPolygon(pt, f)) return f; } catch {}
+  }
+  return null;
+}
+
+const questionTitle = document.getElementById('question-title');
+const hintText = document.getElementById('hint-text');
+const centerMsg = document.getElementById('center-msg');
+const timeGaugeWrap = document.getElementById('time-gauge-wrap');
+const timeGauge = document.getElementById('time-gauge');
+const $score = document.getElementById('score');
+const $menu = document.getElementById('menu-screen');
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+function setLock(lock) {
+  isLocked = lock;
+  if (!isFlying) controls.enabled = !lock;
+}
+
+function startTimer() {
+  if (timerRunning) return;
+  timerRunning = true;
+  lastTick = performance.now();
+  timerId = requestAnimationFrame(timerLoop);
+}
+
+function pauseTimer() {
+  timerRunning = false;
+  if (timerId) cancelAnimationFrame(timerId);
+  timerId = null;
+}
+
+function timerLoop(now) {
+  if (!timerRunning) return;
+  const dt = (now - lastTick) / 1000;
+  lastTick = now;
+  timeLeft = Math.max(0, timeLeft - dt);
+  updateGauge();
+
+  if (timeLeft <= 0) {
+    pauseTimer();
+    onTimeUp();
+    return;
+  }
+
+  if (!hint1Shown && timeLeft <= 20) {
+    hint1Shown = true;
+    showHint(getHemisphereHint(target));
+  } else if (!hint2Shown && timeLeft <= 10) {
+    hint2Shown = true;
+    showHint(getRegionHint(target));
+  }
+
+  if (timerRunning) timerId = requestAnimationFrame(timerLoop);
+}
+
+function updateGauge() {
+  const pct = timeLeft / 30;
+  timeGauge.style.transform = `scaleX(${pct})`;
+  if (timeLeft > 20) timeGauge.style.background = '#4ade80';
+  else if (timeLeft > 10) timeGauge.style.background = '#fbbf24';
+  else timeGauge.style.background = '#f87171';
+}
+
+function showCenterMsg(text, color) {
+  centerMsg.textContent = text;
+  centerMsg.style.color = color;
+  centerMsg.classList.add('show');
+}
+
+function hideCenterMsg() {
+  centerMsg.classList.remove('show');
+}
+
+function getHemisphereHint(feature) {
+  if (!feature._bbox) return '北半球';
+  const centerLat = (feature._bbox[1] + feature._bbox[3]) / 2;
+  if (centerLat > 10) return '北半球';
+  if (centerLat < -10) return '南半球';
+  return '赤道付近';
+}
+
+function getRegionHint(feature) {
+  const idKey = normalizeId(feature.id);
+  let region = regions[idKey] || regions[feature.properties?.iso_a3];
+  if (!region) return 'アジア';
+  const map = {
+    'Africa': 'アフリカ', 'Americas': 'アメリカ大陸', 'Asia': 'アジア',
+    'Europe': 'ヨーロッパ', 'Oceania': 'オセアニア', 'Antarctic': '南極',
+  };
+  let ja = map[region] || region;
+  if (region === 'Americas') {
+    const centerLat = (feature._bbox[1] + feature._bbox[3]) / 2;
+    ja = centerLat > 12 ? '北アメリカ' : '南アメリカ';
+  }
+  return ja;
+}
+
+async function showHint(text) {
+  pauseTimer();
+  setLock(true);
+  state = 'hint';
+
+  timeGaugeWrap.classList.remove('active');
+
+  hintText.textContent = `ヒント: ${text}`;
+  hintText.classList.add('no-transition');
+  hintText.classList.remove('corner');
+  hintText.classList.add('center');
+  void hintText.offsetWidth;
+  hintText.classList.remove('no-transition');
+
+  await sleep(2000);
+
+  hintText.classList.remove('center');
+  hintText.classList.add('corner');
+
+  await sleep(600);
+
+  timeGaugeWrap.classList.add('active');
+  setLock(false);
+  state = 'playing';
+  startTimer();
+}
+
+function resetColors() {
+  wrongMarks.clear();
+  correctMark = null;
+  redrawMap();
+}
+
+function pickTarget() {
+  const list = countries.features.filter(f => f.geometry && f.properties?.name !== 'Antarctica');
+  target = list[Math.floor(Math.random() * list.length)];
+}
+
+async function startQuestion() {
+  if (!countries) return;
+  state = 'showing';
+  setLock(true);
+  resetColors();
+  stopGlow();
+  pickTarget();
+
+  timeGaugeWrap.classList.remove('active');
+  timeLeft = 30;
+  hint1Shown = false;
+  hint2Shown = false;
+  updateGauge();
+
+  hintText.className = 'announce-style';
+  hintText.textContent = '';
+
+  questionTitle.textContent = getJapaneseName(target);
+  questionTitle.classList.add('no-transition');
+  questionTitle.classList.remove('corner');
+  questionTitle.classList.add('center');
+  void questionTitle.offsetWidth;
+  questionTitle.classList.remove('no-transition');
+
+  await sleep(3000);
+
+  questionTitle.classList.remove('center');
+  questionTitle.classList.add('corner');
+
+  await sleep(600);
+
+  timeGaugeWrap.classList.add('active');
+  setLock(false);
+  state = 'playing';
+  startTimer();
+}
+
+async function showCorrect() {
+  pauseTimer();
+  setLock(true);
+  state = 'feedback';
+
+  timeGaugeWrap.classList.remove('active');
+  correctMark = target;
+  redrawMap();
+  startGlow(target, '#22c55e');
+
+  showCenterMsg('正解！', '#4ade80');
+  await sleep(1500);
+  hideCenterMsg();
+
+  const curPos = camera.position.clone();
+  const curLL = vec3ToLonLat(curPos);
+  const curDist = curPos.length();
+  await flyTo(curLL.lon, curLL.lat, 1000, { targetDist: curDist * 1.3 });
+
+  stopGlow();
+  correctMark = null;
+  redrawMap();
+  await sleep(300);
+
+  startQuestion();
+}
+
+async function showWrong(picked) {
+  pauseTimer();
+  setLock(true);
+  state = 'feedback';
+  wrongMarks.add(picked);
+  redrawMap();
+
+  timeLeft = Math.max(0, timeLeft - 5);
+  timeGauge.style.transition = 'transform 0.5s ease-out';
+  updateGauge();
+  setTimeout(() => { timeGauge.style.transition = ''; }, 600);
+
+  showCenterMsg(`ここは ${getJapaneseName(picked)} です`, '#f87171');
+  await sleep(3000);
+  hideCenterMsg();
+
+  wrongMarks.delete(picked);
+  redrawMap();
+  await sleep(400);
+
+  if (timeLeft <= 0) {
+    onTimeUp();
+    return;
+  }
+
+  setLock(false);
+  state = 'playing';
+  startTimer();
+}
+
+async function onTimeUp() {
+  pauseTimer();
+  setLock(true);
+  state = 'feedback';
+
+  timeGaugeWrap.classList.remove('active');
+  wrongMarks.clear();
+  redrawMap();
+
+  showCenterMsg('時間切れ！', '#f87171');
+  await sleep(2000);
+  hideCenterMsg();
+
+  correctMark = target;
+  redrawMap();
+
+  // ★グロー開始（金色）
+  startGlow(target, '#ffd700');
+
+  const center = getCountryCenter(target);
+  await flyTo(center.lon, center.lat, 5000, {
+    zoomOutTo: 5.5,
+    targetDist: 2.0
+  });
+
+  await sleep(5000);
+
+  // その場で少しズームアウト（グローは継続）
+  const curPos = camera.position.clone();
+  const curLL = vec3ToLonLat(curPos);
+  const curDist = curPos.length();
+  await flyTo(curLL.lon, curLL.lat, 1000, { targetDist: curDist * 1.3 });
+
+  stopGlow();
+  correctMark = null;
+  redrawMap();
+  await sleep(300);
+
+  startQuestion();
+}
+
+async function init() {
+  await loadTranslations();
+
+  const topology = await fetch(
+    'https://cdn.jsdelivr.net/npm/world-atlas@2/countries-50m.json'
+  ).then(r => r.json());
+  countries = topojson.feature(topology, topology.objects.countries);
+
+  countries.features.forEach(f => {
+    if (!f.geometry) return;
+    try { f._bbox = turf.bbox(f); } catch { f._bbox = null; }
+  });
+
+  drawBaseMap();
+  redrawMap();
+  $score.textContent = `スコア: 0 / 0`;
+
+  $menu.innerHTML = `
+    <h1>GEO QUIZ</h1>
+    <div class="start-text">PUSH ENTER TO START</div>
+  `;
+  $menu.classList.remove('hidden');
+  state = 'menu';
+}
+
+async function startGame() {
+  if (state !== 'menu') return;
+  $menu.classList.add('hidden');
+  await sleep(800);
+  startQuestion();
+}
+
 const raycaster = new THREE.Raycaster();
 const pointer = new THREE.Vector2();
 
@@ -127,126 +867,59 @@ function tapToLonLat(event) {
   raycaster.setFromCamera(pointer, camera);
   const hits = raycaster.intersectObject(globe);
   if (!hits.length) return null;
-  const p = hits[0].point.clone().normalize();
-  const lat = 90 - Math.acos(THREE.MathUtils.clamp(p.y, -1, 1)) * 180 / Math.PI;
-  let lon = Math.atan2(p.z, -p.x) * 180 / Math.PI;
-  if (lon > 180) lon -= 360;
-  return { lon, lat };
+  return vec3ToLonLat(hits[0].point);
 }
 
-// ===== 国判定（bboxで絞ってからTurf） =====
-function findCountry(lon, lat, countries) {
-  const pt = turf.point([lon, lat]);
-  for (const feature of countries.features) {
-    const b = feature._bbox;
-    if (b && (lon < b[0] || lon > b[2] || lat < b[1] || lat > b[3])) continue;
-    try {
-      if (turf.booleanPointInPolygon(pt, feature)) return feature;
-    } catch { /* 壊れたジオメトリはスキップ */ }
-  }
-  return null;
-}
-
-// ===== 日本語名マッピング（必要な国を追加） =====
-const NAME_JA = {
-  Azerbaijan: 'アゼルバイジャン',
-  Japan: '日本',
-  France: 'フランス',
-  Brazil: 'ブラジル',
-  Australia: 'オーストラリア',
-  Canada: 'カナダ',
-  Egypt: 'エジプト',
-  India: 'インド',
-  Italy: 'イタリア',
-  Kenya: 'ケニア',
-  Mexico: 'メキシコ',
-  Mongolia: 'モンゴル',
-  Norway: 'ノルウェー',
-  Peru: 'ペルー',
-  Turkey: 'トルコ',
-  Vietnam: 'ベトナム',
-};
-
-// ===== ゲーム状態 =====
-let countries = null;
-let target = null;
-let score = 0;
-let total = 0;
-let locked = false;
-
-const $question = document.getElementById('question');
-const $feedback = document.getElementById('feedback');
-const $score = document.getElementById('score');
-
-function pickTarget() {
-  const list = countries.features.filter(
-    f => f.geometry && NAME_JA[f.properties?.name]
-  );
-  target = list[Math.floor(Math.random() * list.length)];
-  $question.textContent = `🌍 ${NAME_JA[target.properties.name]} はどこ？`;
-  $feedback.textContent = '';
-  $feedback.className = '';
-  locked = false;
-}
-
-// ===== 初期化 =====
-async function init() {
-  // world-atlas の TopoJSON を取得 → GeoJSON に変換
-  const topology = await fetch(
-    'https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json'
-  ).then(r => r.json());
-  countries = topojson.feature(topology, topology.objects.countries);
-
-  // bbox を事前計算
-  countries.features.forEach(f => {
-    if (f.geometry) {
-      try { f._bbox = turf.bbox(f); } catch { f._bbox = null; }
-    }
-  });
-
-  // 国境線を描画
-  scene.add(buildBorders(countries, R * 1.001));
-
-  pickTarget();
-  $score.textContent = `スコア: ${score} / ${total}`;
-}
-
-// ===== タップイベント =====
 let downPos = null;
-renderer.domElement.addEventListener('pointerdown', e => { downPos = { x: e.clientX, y: e.clientY }; });
+renderer.domElement.addEventListener('pointerdown', e => {
+  downPos = { x: e.clientX, y: e.clientY };
+});
 renderer.domElement.addEventListener('pointerup', e => {
+  if (state !== 'playing' || isLocked) return;
   if (!downPos) return;
   const moved = Math.hypot(e.clientX - downPos.x, e.clientY - downPos.y);
   downPos = null;
-  if (moved > 6 || locked || !countries) return; // ドラッグ回転は無視
+  if (moved > 6) return;
 
   const hit = tapToLonLat(e);
   if (!hit) return;
 
-  const picked = findCountry(hit.lon, hit.lat, countries);
-  total++;
-
+  const picked = findCountry(hit.lon, hit.lat);
   if (!picked) {
-    $feedback.textContent = '海の上です。陸地をタップしてね。';
-    $feedback.className = 'ng';
-  } else if (picked === target) {
-    score++;
-    $feedback.textContent = `⭕ 正解！ ${NAME_JA[target.properties.name]} です。`;
-    $feedback.className = 'ok';
-    locked = true;
-    setTimeout(pickTarget, 1200);
-  } else {
-    const pickedName = NAME_JA[picked.properties?.name] || picked.properties?.name || '不明な国';
-    $feedback.textContent = `❌ そこは ${pickedName}。もう一度探してみよう。`;
-    $feedback.className = 'ng';
+    showCenterMsg('海の上です', '#f87171');
+    setTimeout(() => { if (state === 'playing') hideCenterMsg(); }, 1000);
+    return;
   }
-  $score.textContent = `スコア: ${score} / ${total}`;
+
+  total++;
+  if (picked === target) {
+    score++;
+    $score.textContent = `スコア: ${score} / ${total}`;
+    showCorrect();
+  } else {
+    $score.textContent = `スコア: ${score} / ${total}`;
+    showWrong(picked);
+  }
 });
 
-// ===== アニメーション =====
+window.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && state === 'menu') startGame();
+});
+$menu.addEventListener('click', () => {
+  if (state === 'menu') startGame();
+});
+
 function animate() {
   requestAnimationFrame(animate);
-  controls.update();
+  if (!isFlying) controls.update();
+
+  // ★グローのパルスアニメーション
+  if (glowActive) {
+    const t = (performance.now() - glowStartTime) / 1000;
+    const pulse = 0.5 + 0.5 * Math.sin(t * Math.PI * 2);
+    glowMaterial.opacity = 0.5 + pulse * 0.5;
+  }
+
   renderer.render(scene, camera);
 }
 
