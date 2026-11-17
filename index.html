@@ -913,9 +913,11 @@ $menu.addEventListener('click', () => {
 
 function animate() {
   requestAnimationFrame(animate);
-  // カメラが地球に近いほど回転感度を下げ、
-  // 同じスワイプ量で動く地表の距離が大きくなりすぎないようにする
-  controls.rotateSpeed = BASE_ROTATE_SPEED * camera.position.length() / BASE_CAMERA_DISTANCE;
+  // ズームイン時の感度低下を従来の2.1倍にする
+  // 通常倍率では従来どおり、強いズーム時も操作不能にならないよう下限を設定
+  const zoomRatio = camera.position.length() / BASE_CAMERA_DISTANCE;
+  const sensitivity = 1 - (1 - zoomRatio) * 2.1;
+  controls.rotateSpeed = BASE_ROTATE_SPEED * Math.max(0.05, sensitivity);
 
   if (!isFlying) controls.update();
 
