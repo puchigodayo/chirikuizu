@@ -4,9 +4,12 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>球体地理クイズ</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho+B1:wght@600;800&family=Zen+Kaku+Gothic+New:wght@500;700;900&display=swap" rel="stylesheet">
 <style>
   * { box-sizing: border-box; }
-  body { margin: 0; overflow: hidden; background: #0b1020; font-family: system-ui, sans-serif; }
+  body { margin: 0; overflow: hidden; background: #0b1020; font-family: 'Zen Kaku Gothic New', 'Hiragino Kaku Gothic ProN', system-ui, sans-serif; }
 
   #menu-screen {
     position: fixed; inset: 0;
@@ -19,7 +22,8 @@
   }
   #menu-screen h1 {
     font-size: clamp(3rem, 11vw, 5.2rem);
-    letter-spacing: .08em; margin: 16px 0 10px; font-weight: 200; line-height: 1;
+    font-family: 'Shippori Mincho B1', 'Hiragino Mincho ProN', 'Yu Mincho', serif;
+    letter-spacing: .06em; margin: 16px 0 10px; font-weight: 600; line-height: 1;
     color: #fff; text-shadow: none;
   }
   #menu-screen h1 span { font-weight: 800; }
@@ -35,7 +39,7 @@
     font-weight: 900; font-size: clamp(2rem, 6vw, 4.5rem); line-height: 1;
     text-shadow: 0 4px 24px rgba(0, 0, 0, 0.9), 0 0 60px rgba(59, 130, 246, 0.4);
     transform-origin: top left; pointer-events: none; white-space: nowrap; max-width: 94vw; overflow: hidden; text-overflow: ellipsis;
-    font-family: 'Helvetica Neue', Arial, 'Hiragino Kaku Gothic ProN', sans-serif;
+    font-family: 'Shippori Mincho B1', 'Hiragino Mincho ProN', 'Yu Mincho', serif;
     letter-spacing: 0.05em;
   }
 
@@ -82,7 +86,7 @@
     position: fixed; top: 50%; left: 50%;
     transform: translate(-50%, -50%) scale(0.9);
     font-size: clamp(1.5rem, 5vw, 4rem); font-weight: 900;
-    font-family: 'Helvetica Neue', Arial, 'Hiragino Kaku Gothic ProN', sans-serif;
+    font-family: 'Shippori Mincho B1', 'Hiragino Mincho ProN', 'Yu Mincho', serif;
     text-shadow: 0 4px 24px rgba(0,0,0,0.9);
     opacity: 0; transition: opacity 0.3s, transform 0.3s;
     pointer-events: none; z-index: 150; text-align: center; width: 90vw;
@@ -137,7 +141,7 @@
   #info-card { position: fixed; left: 50%; bottom: 18px; transform: translate(-50%, 16px); z-index: 130; width: min(520px, 92vw); background: rgba(10,15,30,.88); border: 1px solid rgba(255,255,255,.16); border-radius: 16px; padding: 14px 16px; color: #e2e8f0; opacity: 0; transition: opacity .3s, transform .3s; pointer-events: none; backdrop-filter: blur(6px); box-shadow: 0 12px 32px rgba(0,0,0,.5); }
   #info-card.show { opacity: 1; transform: translate(-50%, 0); }
   #info-card .info-label { font-size: 11px; letter-spacing: .15em; color: #60a5fa; font-weight: 800; margin-bottom: 2px; }
-  #info-card .info-name { font-size: 22px; font-weight: 900; color: #fff; margin-bottom: 8px; }
+  #info-card .info-name { font-family: 'Shippori Mincho B1', 'Hiragino Mincho ProN', 'Yu Mincho', serif; font-size: 22px; font-weight: 800; color: #fff; margin-bottom: 8px; }
   #info-card .info-rows { display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 13px; }
   #info-card .info-rows span { color: #94a3b8; margin-right: 6px; }
   #info-card .info-rows b { color: #fff; font-weight: 700; }
@@ -827,7 +831,7 @@ let subregions = {};
 let capitals = {};
 let areas = {};
 let streak = 0;
-let bestStreak = Number(localStorage.getItem('geoQuizBestStreak') || 0);
+let bestStreak = 0; // 連続記録はこのゲーム内だけ。保存しない。メニューに戻る・最初からでリセットされる。
 let soundEnabled = localStorage.getItem('geoQuizSound') !== 'off';
 let paused = false;
 function setMenuMode(on) { document.body.classList.toggle('in-menu', on); }
@@ -1064,7 +1068,7 @@ function returnToMenu() {
   hideInfoCard(); hideCenterMsg();
   document.getElementById('pause-overlay').classList.remove('show');
   resetColors(); stopGlow();
-  score = 0; total = 0; streak = 0; attemptCounted = false;
+  score = 0; total = 0; streak = 0; bestStreak = 0; attemptCounted = false;
   setScore();
   $menu.classList.remove('hidden');
   setMenuMode(true);
@@ -1072,15 +1076,29 @@ function returnToMenu() {
   updateStatsUI();
 }
 
-function restartGame() {
+async function restartGame() {
   sessionId++;
   paused = false;
   document.body.classList.remove('paused');
   pauseTimer();
   hideInfoCard(); hideCenterMsg();
   document.getElementById('pause-overlay').classList.remove('show');
-  score = 0; total = 0; streak = 0; attemptCounted = false;
+  score = 0; total = 0; streak = 0; bestStreak = 0; attemptCounted = false;
   setScore(); resetColors(); stopGlow();
+  const sid = sessionId;
+  // 少しだけズームアウトして、全体を見渡せる位置から次の問題へ。
+  // すでに飛行中の場合はそちらに任せ、競合しないよう飛ばない。
+  if (!isFlying) {
+    state = 'restarting';
+    setLock(true);
+    const curPos = camera.position.clone();
+    const curLL = vec3ToLonLat(curPos);
+    const curDist = curPos.length();
+    if (curDist < 3.1) {
+      await flyTo(curLL.lon, curLL.lat, 800, { targetDist: Math.min(curDist + 0.9, 3.2) });
+      if (sid !== sessionId) return;
+    }
+  }
   state = 'menu';
   startQuestion();
 }
@@ -1279,7 +1297,7 @@ async function showCorrect() {
   setLock(true);
   state = 'feedback';
   streak++;
-  if (streak > bestStreak) { bestStreak = streak; localStorage.setItem('geoQuizBestStreak', String(bestStreak)); }
+  if (streak > bestStreak) { bestStreak = streak; }
   setScore();
 
   timeGaugeWrap.classList.remove('active');
