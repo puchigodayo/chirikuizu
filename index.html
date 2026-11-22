@@ -105,11 +105,10 @@
     transform-origin: left;
   }
 
-  #score {
-    position: fixed; bottom: 16px; right: 16px; color: #fff; font-size: 15px; font-weight: 700;
-    background: rgba(0,0,0,.65); padding: 8px 14px; border-radius: 999px; border: 1px solid rgba(255,255,255,.15);
-    box-shadow: 0 4px 16px rgba(0,0,0,.4); z-index: 100;
-  }
+  /* はじめの画面では背景UIをすべて隠し、地球だけを見せる */
+  body.in-menu #hud, body.in-menu #time-gauge-wrap, body.in-menu #info-card, body.in-menu #toast { display: none !important; }
+  /* 一時停止中は CSS アニメーションも止める */
+  body.paused *, body.paused *::before, body.paused *::after { animation-play-state: paused !important; }
   /* --- UI強化: HUD / メニュー / 情報カード / 演出 --- */
   #hud { position: fixed; top: 14px; right: 14px; z-index: 120; display: flex; align-items: center; gap: 8px; }
   .hud-stat { background: rgba(0,0,0,.6); border: 1px solid rgba(255,255,255,.14); border-radius: 12px; padding: 6px 10px; color: #e2e8f0; font-size: 12px; text-align: center; min-width: 56px; backdrop-filter: blur(4px); }
@@ -177,13 +176,12 @@
   }
 </style>
 </head>
-<body>
+<body class="in-menu">
 <div id="menu-screen"><div class="loading">LOADING...</div></div>
 <div id="question-title" class="announce-style"></div>
 <div id="time-gauge-wrap"><div id="time-gauge-bar"><div id="time-gauge"></div></div><span id="time-text">30</span></div>
 <div id="hint-text" class="announce-style"></div>
 <div id="center-msg"></div>
-<div id="score">スコア: 0 / 0</div>
 <div id="hud">
   <div class="hud-stat"><span class="hud-label">連続</span><b id="stat-streak">0</b></div>
   <div class="hud-stat"><span class="hud-label">正答率</span><b id="stat-acc">—</b></div>
@@ -198,7 +196,7 @@
 <div id="flash"></div>
 <div id="toast"></div>
 <div id="confetti"></div>
-<div id="pause-overlay"><div class="pause-card"><h2>一時停止中</h2><p>地球儀は止まっています。タイマーも止まっています。</p><button id="btn-resume" type="button">再開する</button><button id="btn-restart-overlay" type="button">最初からやり直す</button><button id="btn-menu-overlay" type="button">メニューに戻る</button></div></div>
+<div id="pause-overlay"><div class="pause-card"><h2>一時停止中</h2><p>タイマーもアニメーションも、すべて止まっています。</p><button id="btn-resume" type="button">再開する</button><button id="btn-restart-overlay" type="button">最初からやり直す</button><button id="btn-menu-overlay" type="button">メニューに戻る</button></div></div>
 
 <script type="importmap">
 {
@@ -485,9 +483,18 @@ function flyTo(lon, lat, duration = 1000, options = {}) {
     while (dLon > 180) dLon -= 360;
     while (dLon < -180) dLon += 360;
 
-    const startTime = performance.now();
+    let startTime = performance.now();
+    let lastNow = startTime;
 
     function step(now) {
+      if (paused) {
+        // 止まっている間は経過時間に加算しない。カメラの飛行がその場で止まる。
+        startTime += now - lastNow;
+        lastNow = now;
+        requestAnimationFrame(step);
+        return;
+      }
+      lastNow = now;
       const t = Math.min(1, (now - startTime) / duration);
       const ease = t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
       const curLon = startLL.lon + dLon * ease;
@@ -822,6 +829,8 @@ let areas = {};
 let streak = 0;
 let bestStreak = Number(localStorage.getItem('geoQuizBestStreak') || 0);
 let soundEnabled = localStorage.getItem('geoQuizSound') !== 'off';
+let paused = false;
+function setMenuMode(on) { document.body.classList.toggle('in-menu', on); }
 let sessionId = 0;
 let pausedFromState = null;
 let audioCtx = null; // world-countries の subregion（北米/中米/南米/カリブ等）
@@ -918,12 +927,23 @@ const hintText = document.getElementById('hint-text');
 const centerMsg = document.getElementById('center-msg');
 const timeGaugeWrap = document.getElementById('time-gauge-wrap');
 const timeGauge = document.getElementById('time-gauge');
-const $score = document.getElementById('score');
 const $menu = document.getElementById('menu-screen');
-const sleep = ms => new Promise(r => setTimeout(r, ms));
+// 一時停止中は進まない sleep。タイトル表示・ヒント・正誤フィードバック・
+// 飛行など、すべての待ち時間がこれを通るため、止めると全体が止まる。
+const sleep = ms => new Promise(resolve => {
+  let remaining = ms;
+  let last = performance.now();
+  const id = setInterval(() => {
+    if (paused) { last = performance.now(); return; }
+    const now = performance.now();
+    remaining -= now - last;
+    last = now;
+    if (remaining <= 0) { clearInterval(id); resolve(); }
+  }, 50);
+});
 
 function setScore() {
-  $score.textContent = `スコア: ${score} / ${total}`;
+  // 右下スコアは廃止。成績は HUD（連続・正答率・ベスト）で見る。
   updateStatsUI();
 }
 function updateStatsUI() {
@@ -954,11 +974,11 @@ function playWrong() { beep(160, 0.25, 'sawtooth'); }
 function flash(color) {
   const el = document.getElementById('flash');
   el.style.background = color; el.classList.add('show');
-  setTimeout(() => el.classList.remove('show'), 320);
+  sleep(320).then(() => el.classList.remove('show'));
 }
 function shakeScreen() {
   document.body.classList.add('shake');
-  setTimeout(() => document.body.classList.remove('shake'), 420);
+  sleep(420).then(() => document.body.classList.remove('shake'));
 }
 function countryScreenPos(feature) {
   const c = getCountryCenter(feature);
@@ -975,7 +995,7 @@ function burstFromCountry(feature) {
   ring.style.left = pos.x + 'px';
   ring.style.top = pos.y + 'px';
   box.appendChild(ring);
-  setTimeout(() => ring.remove(), 900);
+  sleep(900).then(() => ring.remove());
   const colors = ['#4ade80', '#60a5fa', '#fbbf24', '#f472b6', '#a78bfa', '#ffffff'];
   for (let i = 0; i < 36; i++) {
     const d = document.createElement('div');
@@ -988,7 +1008,7 @@ function burstFromCountry(feature) {
     d.style.setProperty('--dx', Math.cos(ang) * dist + 'px');
     d.style.setProperty('--dy', Math.sin(ang) * dist + 'px');
     box.appendChild(d);
-    setTimeout(() => d.remove(), 1000);
+    sleep(1000).then(() => d.remove());
   }
 }
 let toastTimer = null;
@@ -1017,19 +1037,29 @@ function showInfoCard(feature, label) {
 }
 function hideInfoCard() { document.getElementById('info-card').classList.remove('show'); }
 function pauseGame() {
-  if (state !== 'playing') return;
+  // アニメーション中（表示・ヒント・フィードバック）でも押せる。
+  if (state === 'menu' || state === 'error' || state === 'paused') return;
+  paused = true;
+  document.body.classList.add('paused');
   pausedFromState = state;
   pauseTimer(); setLock(true); state = 'paused';
   document.getElementById('pause-overlay').classList.add('show');
 }
 function resumeGame() {
   if (state !== 'paused') return;
+  paused = false;
+  document.body.classList.remove('paused');
   document.getElementById('pause-overlay').classList.remove('show');
   state = pausedFromState || 'playing'; pausedFromState = null;
-  setLock(false); startTimer();
+  setLock(false);
+  // プレイ中だった場合だけタイマーを再開する。表示・ヒント・フィードバック中は
+  // もともとタイマーが止まっているので、再開はその流れに任せる。
+  if (state === 'playing') startTimer();
 }
 function returnToMenu() {
   sessionId++;
+  paused = false;
+  document.body.classList.remove('paused');
   pauseTimer();
   hideInfoCard(); hideCenterMsg();
   document.getElementById('pause-overlay').classList.remove('show');
@@ -1037,12 +1067,15 @@ function returnToMenu() {
   score = 0; total = 0; streak = 0; attemptCounted = false;
   setScore();
   $menu.classList.remove('hidden');
+  setMenuMode(true);
   state = 'menu';
   updateStatsUI();
 }
 
 function restartGame() {
   sessionId++;
+  paused = false;
+  document.body.classList.remove('paused');
   pauseTimer();
   hideInfoCard(); hideCenterMsg();
   document.getElementById('pause-overlay').classList.remove('show');
@@ -1405,6 +1438,7 @@ async function init() {
     </div>
   `;
   $menu.classList.remove('hidden');
+  setMenuMode(true);
   state = 'menu';
   updateStatsUI();
   return true;
@@ -1417,6 +1451,7 @@ async function init() {
       <div class="loading">タップ / ENTER で再試行</div>
     `;
     $menu.classList.remove('hidden');
+    setMenuMode(true);
     state = 'error';
     return false;
   }
@@ -1429,6 +1464,9 @@ function retryInit() {
 
 async function startGame() {
   if (state !== 'menu') return;
+  paused = false;
+  document.body.classList.remove('paused');
+  setMenuMode(false);
   $menu.classList.add('hidden');
   await sleep(800);
   startQuestion();
@@ -1513,6 +1551,8 @@ updateStatsUI();
 const UP_AXIS = new THREE.Vector3(0, 1, 0);
 function animate() {
   requestAnimationFrame(animate);
+  // 一時停止中はここで止める。メニューの回転・グロー・描画すべてが止まる。
+  if (paused) return;
   if ((state === 'menu' || state === 'error') && !isFlying) {
     camera.position.applyAxisAngle(UP_AXIS, 0.0012);
     camera.lookAt(0, 0, 0);
