@@ -38,7 +38,7 @@
     position: fixed; top: 0; left: 0; z-index: 100;
     font-weight: 900; font-size: clamp(2rem, 6vw, 4.5rem); line-height: 1;
     text-shadow: 0 4px 24px rgba(0, 0, 0, 0.9), 0 0 60px rgba(59, 130, 246, 0.4);
-    transform-origin: top left; pointer-events: none; white-space: nowrap;
+    transform-origin: top left; pointer-events: none; white-space: nowrap; max-width: 94vw; overflow: hidden; text-overflow: ellipsis;
     font-family: 'Helvetica Neue', Arial, 'Hiragino Kaku Gothic ProN', sans-serif;
     letter-spacing: 0.05em;
   }
@@ -110,18 +110,88 @@
   }
 
   #score {
-    position: fixed; bottom: 16px; right: 16px; color: #cbd5e1; font-size: 14px;
-    background: rgba(0,0,0,.6); padding: 6px 12px; border-radius: 8px;
+    position: fixed; bottom: 16px; right: 16px; color: #fff; font-size: 15px; font-weight: 700;
+    background: rgba(0,0,0,.65); padding: 8px 14px; border-radius: 999px; border: 1px solid rgba(255,255,255,.15);
+    box-shadow: 0 4px 16px rgba(0,0,0,.4); z-index: 100;
+  }
+  /* --- UI強化: HUD / メニュー / 情報カード / 演出 --- */
+  #hud { position: fixed; top: 14px; right: 14px; z-index: 120; display: flex; align-items: center; gap: 8px; }
+  .hud-stat { background: rgba(0,0,0,.6); border: 1px solid rgba(255,255,255,.14); border-radius: 12px; padding: 6px 10px; color: #e2e8f0; font-size: 12px; text-align: center; min-width: 56px; backdrop-filter: blur(4px); }
+  .hud-stat .hud-label { display: block; font-size: 10px; color: #94a3b8; letter-spacing: .08em; }
+  .hud-stat b { font-size: 15px; color: #fff; }
+  .hud-stat b.hot { color: #fb923c; }
+  .hud-btns { display: flex; gap: 6px; }
+  .hud-btns button { width: 36px; height: 36px; border-radius: 10px; border: 1px solid rgba(255,255,255,.18); background: rgba(0,0,0,.6); color: #fff; font-size: 16px; cursor: pointer; backdrop-filter: blur(4px); }
+  .hud-btns button:hover { background: rgba(255,255,255,.18); }
+  #time-gauge-wrap { width: min(300px, 42vw); height: auto; background: transparent; overflow: visible; display: flex; align-items: center; gap: 8px; }
+  #time-gauge-bar { flex: 1; height: 10px; background: rgba(255,255,255,.2); border-radius: 5px; overflow: hidden; }
+  #time-text { color: #fff; font-weight: 800; font-size: 15px; min-width: 2ch; text-align: right; text-shadow: 0 2px 8px rgba(0,0,0,.8); }
+  #time-gauge-wrap.low #time-text { color: #f87171; animation: pulse 0.8s infinite; }
+  #center-msg.show { animation: pop .35s ease; }
+  @keyframes pop { 0% { transform: translate(-50%,-50%) scale(.8); } 60% { transform: translate(-50%,-50%) scale(1.08); } 100% { transform: translate(-50%,-50%) scale(1); } }
+  @keyframes shakeAnim { 0%,100% { transform: translate(0,0); } 20% { transform: translate(-7px,3px); } 40% { transform: translate(6px,-3px); } 60% { transform: translate(-5px,-2px); } 80% { transform: translate(4px,2px); } }
+  body.shake { animation: shakeAnim .4s ease; }
+  #flash { position: fixed; inset: 0; z-index: 140; pointer-events: none; opacity: 0; transition: opacity .35s; }
+  #flash.show { opacity: .28; }
+  #toast { position: fixed; bottom: 76px; left: 50%; transform: translate(-50%, 8px); z-index: 150; background: rgba(0,0,0,.75); color: #fff; padding: 10px 16px; border-radius: 999px; font-size: 14px; opacity: 0; transition: opacity .25s, transform .25s; pointer-events: none; white-space: nowrap; max-width: 92vw; overflow: hidden; text-overflow: ellipsis; }
+  #toast.show { opacity: 1; transform: translate(-50%, 0); }
+  #info-card { position: fixed; left: 50%; bottom: 18px; transform: translate(-50%, 16px); z-index: 130; width: min(520px, 92vw); background: rgba(10,15,30,.88); border: 1px solid rgba(255,255,255,.16); border-radius: 16px; padding: 14px 16px; color: #e2e8f0; opacity: 0; transition: opacity .3s, transform .3s; pointer-events: none; backdrop-filter: blur(6px); box-shadow: 0 12px 32px rgba(0,0,0,.5); }
+  #info-card.show { opacity: 1; transform: translate(-50%, 0); }
+  #info-card .info-label { font-size: 11px; letter-spacing: .15em; color: #60a5fa; font-weight: 800; margin-bottom: 2px; }
+  #info-card .info-name { font-size: 22px; font-weight: 900; color: #fff; margin-bottom: 8px; }
+  #info-card .info-rows { display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 13px; }
+  #info-card .info-rows span { color: #94a3b8; margin-right: 6px; }
+  #info-card .info-rows b { color: #fff; font-weight: 700; }
+  #pause-overlay { position: fixed; inset: 0; z-index: 180; display: none; align-items: center; justify-content: center; background: rgba(5,8,18,.72); backdrop-filter: blur(4px); }
+  #pause-overlay.show { display: flex; }
+  .pause-card { background: rgba(15,23,42,.95); border: 1px solid rgba(255,255,255,.15); border-radius: 20px; padding: 28px 32px; text-align: center; color: #fff; width: min(360px, 90vw); }
+  .pause-card h2 { margin: 0 0 6px; font-size: 26px; }
+  .pause-card p { color: #94a3b8; font-size: 14px; margin: 0 0 18px; }
+  .pause-card button { display: block; width: 100%; margin-top: 10px; padding: 12px; border-radius: 12px; border: none; font-size: 16px; font-weight: 800; cursor: pointer; }
+  #btn-resume { background: linear-gradient(135deg, #3b82f6, #8b5cf6); color: #fff; }
+  #btn-restart-overlay { background: rgba(255,255,255,.12); color: #fff; }
+  #confetti { position: fixed; inset: 0; z-index: 145; pointer-events: none; overflow: hidden; }
+  .confetti-piece { position: absolute; top: -12px; width: 9px; height: 14px; border-radius: 2px; animation: confetti-fall 1.3s ease-in forwards; }
+  @keyframes confetti-fall { to { transform: translateY(105vh) rotate(720deg); opacity: .2; } }
+  .menu-card { background: rgba(15,23,42,.72); border: 1px solid rgba(255,255,255,.14); border-radius: 24px; padding: 30px 34px; text-align: center; width: min(480px, 92vw); box-shadow: 0 24px 64px rgba(0,0,0,.5); }
+  .menu-eyebrow { font-size: 11px; letter-spacing: .35em; color: #60a5fa; font-weight: 800; }
+  #menu-screen h1 { margin: .4rem 0 .2rem; }
+  .menu-sub { color: #cbd5e1; margin: 0 0 18px; font-size: 15px; }
+  .howto { text-align: left; display: grid; gap: 8px; margin: 0 0 16px; font-size: 14px; color: #e2e8f0; }
+  .howto b { display: inline-flex; width: 22px; height: 22px; border-radius: 50%; background: #3b82f6; color: #fff; align-items: center; justify-content: center; font-size: 12px; margin-right: 8px; }
+  .menu-best { color: #fbbf24; font-size: 13px; font-weight: 700; margin-bottom: 16px; }
+  .menu-btn { width: 100%; padding: 14px; border: none; border-radius: 14px; font-size: 18px; font-weight: 900; letter-spacing: .1em; color: #fff; background: linear-gradient(135deg, #3b82f6, #8b5cf6); cursor: pointer; box-shadow: 0 8px 24px rgba(59,130,246,.45); }
+  .menu-btn:hover { filter: brightness(1.1); }
+  @media (max-width: 640px) {
+    .hud-stat { min-width: 48px; padding: 5px 7px; }
+    .hud-stat .hud-label { display: none; }
+    #info-card .info-name { font-size: 19px; }
+    .menu-card { padding: 22px 18px; }
   }
 </style>
 </head>
 <body>
 <div id="menu-screen"><div class="loading">LOADING...</div></div>
 <div id="question-title" class="announce-style"></div>
-<div id="time-gauge-wrap"><div id="time-gauge"></div></div>
+<div id="time-gauge-wrap"><div id="time-gauge-bar"><div id="time-gauge"></div></div><span id="time-text">30</span></div>
 <div id="hint-text" class="announce-style"></div>
 <div id="center-msg"></div>
 <div id="score">スコア: 0 / 0</div>
+<div id="hud">
+  <div class="hud-stat"><span class="hud-label">連続</span><b id="stat-streak">0</b></div>
+  <div class="hud-stat"><span class="hud-label">正答率</span><b id="stat-acc">—</b></div>
+  <div class="hud-stat"><span class="hud-label">ベスト</span><b id="stat-best">0連続</b></div>
+  <div class="hud-btns">
+    <button id="btn-pause" type="button" title="一時停止">⏸</button>
+    <button id="btn-restart" type="button" title="最初から">↺</button>
+    <button id="btn-sound" type="button" title="音のオン・オフ">🔊</button>
+  </div>
+</div>
+<div id="info-card"></div>
+<div id="flash"></div>
+<div id="toast"></div>
+<div id="confetti"></div>
+<div id="pause-overlay"><div class="pause-card"><h2>一時停止中</h2><p>地球儀は止まっています。タイマーも止まっています。</p><button id="btn-resume" type="button">再開する</button><button id="btn-restart-overlay" type="button">最初からやり直す</button></div></div>
 
 <script type="importmap">
 {
@@ -151,7 +221,7 @@ document.body.appendChild(renderer.domElement);
 
 const R = 1;
 const maxTexSize = renderer.capabilities.maxTextureSize;
-const MAP_W = Math.min(8192, maxTexSize);
+const MAP_W = Math.min(4096, maxTexSize); // 8192だと8192x4096キャンバス2枚で約256MBになり、iOS等で描画失敗するため4096に制限
 const MAP_H = MAP_W / 2;
 
 const mapCanvas = document.createElement('canvas');
@@ -171,6 +241,25 @@ const globe = new THREE.Mesh(
   new THREE.MeshBasicMaterial({ map: mapTexture })
 );
 scene.add(globe);
+
+// 星空と大気のグロー（UI強化）
+{
+  const starCount = 900;
+  const pos = new Float32Array(starCount * 3);
+  for (let i = 0; i < starCount; i++) {
+    const v = new THREE.Vector3(Math.random()*2-1, Math.random()*2-1, Math.random()*2-1).normalize()
+      .multiplyScalar(18 + Math.random() * 35);
+    pos.set([v.x, v.y, v.z], i * 3);
+  }
+  const starGeo = new THREE.BufferGeometry();
+  starGeo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  scene.add(new THREE.Points(starGeo, new THREE.PointsMaterial({ color: 0xffffff, size: 0.07, transparent: true, opacity: 0.85 })));
+}
+const atmosphere = new THREE.Mesh(
+  new THREE.SphereGeometry(R * 1.09, 64, 32),
+  new THREE.MeshBasicMaterial({ color: 0x3b82f6, transparent: true, opacity: 0.12, side: THREE.BackSide, blending: THREE.AdditiveBlending, depthWrite: false })
+);
+scene.add(atmosphere);
 
 // ===== グロー用レイヤー =====
 const GLOW_W = 2048, GLOW_H = 1024;
@@ -355,6 +444,12 @@ let isLocked = true;
 const wrongMarks = new Set();
 let correctMark = null;
 
+const NON_COUNTRY_TARGETS = new Set([
+  'Siachen Glacier', 'Fr. S. Antarctic Lands', 'Heard I. and McDonald Is.',
+  'Indian Ocean Ter.', 'Ashmore and Cartier Is.', 'Br. Indian Ocean Ter.',
+  'S. Geo. and the Is.', 'Pitcairn Is.', 'Saint Helena',
+]);
+let attemptCounted = false;
 let timeLeft = 30;
 let timerRunning = false;
 let timerId = null;
@@ -366,7 +461,8 @@ let isFlying = false;
 
 // ★修正：ズーム切り替えをコサイン補間で滑らかに
 function flyTo(lon, lat, duration = 1000, options = {}) {
-  const { zoomOutTo = null, targetDist = null } = options;
+  const { zoomOutTo: zoomOutToRaw = null, targetDist = null } = options;
+  const zoomOutTo = zoomOutToRaw != null ? Math.min(zoomOutToRaw, controls.maxDistance) : null;
   return new Promise(resolve => {
     isFlying = true;
     controls.enabled = false;
@@ -374,7 +470,9 @@ function flyTo(lon, lat, duration = 1000, options = {}) {
     const startPos = camera.position.clone();
     const startLL = vec3ToLonLat(startPos);
     const startDist = startPos.length();
-    const finalDist = targetDist != null ? targetDist : startDist;
+    // controls.maxDistance=6 を超えると flyTo 終了時に controls.update() で
+    // クランプされてカクッと戻るため、ここで制限する。
+    const finalDist = THREE.MathUtils.clamp(targetDist != null ? targetDist : startDist, controls.minDistance, controls.maxDistance);
 
     let dLon = lon - startLL.lon;
     while (dLon > 180) dLon -= 360;
@@ -423,6 +521,22 @@ function flyTo(lon, lat, duration = 1000, options = {}) {
 }
 
 function getCountryCenter(feature) {
+  // turf.center は外接矩形の中心なので、日付変更線をまたぐ国（ロシア・
+  // アメリカ・フィジー等）や海外領土を持つ国（フランス）では国土の外に
+  // 飛んでしまう。面積最大のポリゴン（本土）の中の点を返す。
+  try {
+    const polys = getPolygons(feature.geometry);
+    let best = null, bestArea = -1;
+    for (const poly of polys) {
+      const pf = { type: 'Feature', geometry: { type: 'Polygon', coordinates: poly }, properties: {} };
+      const a = turf.area(pf);
+      if (a > bestArea) { bestArea = a; best = pf; }
+    }
+    if (best) {
+      const pt = turf.pointOnFeature(best);
+      return { lon: pt.geometry.coordinates[0], lat: pt.geometry.coordinates[1] };
+    }
+  } catch (e) { console.warn('getCountryCenter failed', e); }
   try {
     const c = turf.center(feature);
     return { lon: c.geometry.coordinates[0], lat: c.geometry.coordinates[1] };
@@ -438,58 +552,272 @@ function getCountryCenter(feature) {
 }
 
 const FALLBACK_JA = {
-  Japan: '日本', China: '中国', 'United States of America': 'アメリカ合衆国', Russia: 'ロシア',
-  France: 'フランス', Germany: 'ドイツ', 'United Kingdom': 'イギリス', Italy: 'イタリア',
-  Canada: 'カナダ', Australia: 'オーストラリア', Brazil: 'ブラジル', India: 'インド',
-  'South Korea': '韓国', 'North Korea': '北朝鮮', Spain: 'スペイン', Mexico: 'メキシコ',
-  Indonesia: 'インドネシア', Turkey: 'トルコ', 'Saudi Arabia': 'サウジアラビア',
-  Argentina: 'アルゼンチン', Egypt: 'エジプト', 'South Africa': '南アフリカ',
-  Nigeria: 'ナイジェリア', Iran: 'イラン', Thailand: 'タイ', Vietnam: 'ベトナム',
-  Philippines: 'フィリピン', Malaysia: 'マレーシア', Pakistan: 'パキスタン',
-  Bangladesh: 'バングラデシュ', Colombia: 'コロンビア', Chile: 'チリ', Peru: 'ペルー',
-  Venezuela: 'ベネズエラ', Ecuador: 'エクアドル', Bolivia: 'ボリビア', Paraguay: 'パラグアイ',
-  Uruguay: 'ウルグアイ', Cuba: 'キューバ', Guatemala: 'グアテマラ', Honduras: 'ホンジュラス',
-  'El Salvador': 'エルサルバドル', Nicaragua: 'ニカラグア', 'Costa Rica': 'コスタリカ',
-  Panama: 'パナマ', 'Dominican Republic': 'ドミニカ共和国', Haiti: 'ハイチ', Jamaica: 'ジャマイカ',
-  Ukraine: 'ウクライナ', Poland: 'ポーランド', Romania: 'ルーマニア', Netherlands: 'オランダ',
-  Belgium: 'ベルギー', Czechia: 'チェコ', Greece: 'ギリシャ', Portugal: 'ポルトガル',
-  Sweden: 'スウェーデン', Hungary: 'ハンガリー', Austria: 'オーストリア', Switzerland: 'スイス',
-  Bulgaria: 'ブルガリア', Denmark: 'デンマーク', Finland: 'フィンランド', Slovakia: 'スロバキア',
-  Norway: 'ノルウェー', Ireland: 'アイルランド', Croatia: 'クロアチア', Moldova: 'モルドバ',
-  Bosnia: 'ボスニア・ヘルツェゴビナ', Albania: 'アルバニア', Lithuania: 'リトアニア',
-  Slovenia: 'スロベニア', Latvia: 'ラトビア', Estonia: 'エストニア', Macedonia: '北マケドニア',
-  Montenegro: 'モンテネグロ', Luxembourg: 'ルクセンブルク', Kosovo: 'コソボ', Malta: 'マルタ',
-  Iceland: 'アイスランド', Belarus: 'ベラルーシ', Georgia: 'ジョージア', Armenia: 'アルメニア',
-  Azerbaijan: 'アゼルバイジャン', Cyprus: 'キプロス',
-  Myanmar: 'ミャンマー', 'Sri Lanka': 'スリランカ', Nepal: 'ネパール', Bhutan: 'ブータン',
-  Mongolia: 'モンゴル', Kazakhstan: 'カザフスタン', Uzbekistan: 'ウズベキスタン',
-  Turkmenistan: 'トルクメニスタン', Kyrgyzstan: 'キルギス', Tajikistan: 'タジキスタン',
-  Afghanistan: 'アフガニスタン', Iraq: 'イラク', Syria: 'シリア', Jordan: 'ヨルダン',
-  Lebanon: 'レバノン', Israel: 'イスラエル', Kuwait: 'クウェート', Qatar: 'カタール',
-  'United Arab Emirates': 'アラブ首長国連邦', Oman: 'オマーン', Yemen: 'イエメン',
-  Cambodia: 'カンボジア', Laos: 'ラオス', Brunei: 'ブルネイ', 'Timor-Leste': '東ティモール',
-  'Papua New Guinea': 'パプアニューギニア', 'New Zealand': 'ニュージーランド', Fiji: 'フィジー',
-  'Solomon Islands': 'ソロモン諸島', Vanuatu: 'バヌアツ', Samoa: 'サモア',
-  Algeria: 'アルジェリア', Morocco: 'モロッコ', Tunisia: 'チュニジア', Libya: 'リビア',
-  Sudan: 'スーダン', 'South Sudan': '南スーダン', Ethiopia: 'エチオピア', Kenya: 'ケニア',
-  Tanzania: 'タンザニア', Uganda: 'ウガンダ', Ghana: 'ガーナ', 'Ivory Coast': 'コートジボワール',
-  Senegal: 'セネガル', Mali: 'マリ', 'Burkina Faso': 'ブルキナファソ', Niger: 'ニジェール',
-  Chad: 'チャド', Cameroon: 'カメルーン', 'DR Congo': 'コンゴ民主共和国',
-  Congo: 'コンゴ共和国', Angola: 'アンゴラ', Zambia: 'ザンビア', Zimbabwe: 'ジンバブエ',
-  Mozambique: 'モザンビーク', Madagascar: 'マダガスカル', Namibia: 'ナミビア',
-  Botswana: 'ボツワナ', Somalia: 'ソマリア', Somaliland: 'ソマリランド', Eritrea: 'エリトリア',
-  'Central African Republic': '中央アフリカ共和国', Gabon: 'ガボン', 'Equatorial Guinea': '赤道ギニア',
-  'Guinea-Bissau': 'ギニアビサウ', Guinea: 'ギニア', 'Sierra Leone': 'シエラレオネ',
-  Liberia: 'リベリア', Togo: 'トーゴ', Benin: 'ベニン', Mauritania: 'モーリタニア',
-  'Western Sahara': '西サハラ', Lesotho: 'レソト', Eswatini: 'エスワティニ', Malawi: 'マラウイ',
-  Rwanda: 'ルワンダ', Burundi: 'ブルンジ', Djibouti: 'ジブチ',
-  Greenland: 'グリーンランド', 'French Guiana': 'フランス領ギアナ', 'New Caledonia': 'ニューカレドニア',
-  'Puerto Rico': 'プエルトリコ', 'Falkland Islands': 'フォークランド諸島',
-  Antarctica: '南極大陸',
+  'Zimbabwe': 'ジンバブエ',
+  'Zambia': 'ザンビア',
+  'Yemen': 'イエメン',
+  'Vietnam': 'ベトナム',
+  'Venezuela': 'ベネズエラ',
+  'Vatican': 'バチカン市国',
+  'Vanuatu': 'バヌアツ',
+  'Uzbekistan': 'ウズベキスタン',
+  'Uruguay': 'ウルグアイ',
+  'Micronesia': 'ミクロネシア連邦',
+  'Marshall Is.': 'マーシャル諸島',
+  'N. Mariana Is.': '北マリアナ諸島',
+  'U.S. Virgin Is.': 'アメリカ領ヴァージン諸島',
+  'Guam': 'グアム',
+  'American Samoa': 'アメリカ領サモア',
+  'Puerto Rico': 'プエルトリコ',
+  'United States of America': 'アメリカ合衆国',
+  'S. Geo. and the Is.': 'サウスジョージア・サウスサンドウィッチ諸島',
+  'Br. Indian Ocean Ter.': 'イギリス領インド洋地域',
+  'Saint Helena': 'セントヘレナ',
+  'Pitcairn Is.': 'ピトケアン',
+  'Anguilla': 'アンギラ',
+  'Falkland Is.': 'フォークランド諸島',
+  'Cayman Is.': 'ケイマン諸島',
+  'Bermuda': 'バミューダ',
+  'British Virgin Is.': 'イギリス領ヴァージン諸島',
+  'Turks and Caicos Is.': 'タークス・カイコス諸島',
+  'Montserrat': 'モントセラト',
+  'Jersey': 'ジャージー',
+  'Guernsey': 'ガーンジー',
+  'Isle of Man': 'マン島',
+  'United Kingdom': 'イギリス',
+  'United Arab Emirates': 'アラブ首長国連邦',
+  'Ukraine': 'ウクライナ',
+  'Uganda': 'ウガンダ',
+  'Turkmenistan': 'トルクメニスタン',
+  'Turkey': 'トルコ',
+  'Tunisia': 'チュニジア',
+  'Trinidad and Tobago': 'トリニダード・トバゴ',
+  'Tonga': 'トンガ',
+  'Togo': 'トーゴ',
+  'Timor-Leste': '東ティモール',
+  'Thailand': 'タイ',
+  'Tanzania': 'タンザニア',
+  'Tajikistan': 'タジキスタン',
+  'Taiwan': '台湾',
+  'Syria': 'シリア',
+  'Switzerland': 'スイス',
+  'Sweden': 'スウェーデン',
+  'eSwatini': 'エスワティニ',
+  'Suriname': 'スリナム',
+  'S. Sudan': '南スーダン',
+  'Sudan': 'スーダン',
+  'Sri Lanka': 'スリランカ',
+  'Spain': 'スペイン',
+  'South Korea': '韓国',
+  'South Africa': '南アフリカ',
+  'Somalia': 'ソマリア',
+  'Somaliland': 'ソマリランド',
+  'Solomon Is.': 'ソロモン諸島',
+  'Slovakia': 'スロバキア',
+  'Slovenia': 'スロベニア',
+  'Singapore': 'シンガポール',
+  'Sierra Leone': 'シエラレオネ',
+  'Seychelles': 'セーシェル',
+  'Serbia': 'セルビア',
+  'Senegal': 'セネガル',
+  'Saudi Arabia': 'サウジアラビア',
+  'São Tomé and Principe': 'サントメ・プリンシペ',
+  'San Marino': 'サンマリノ',
+  'Samoa': 'サモア',
+  'St. Vin. and Gren.': 'セントビンセントおよびグレナディーン諸島',
+  'Saint Lucia': 'セントルシア',
+  'St. Kitts and Nevis': 'セントクリストファー・ネイビス',
+  'Rwanda': 'ルワンダ',
+  'Russia': 'ロシア',
+  'Romania': 'ルーマニア',
+  'Qatar': 'カタール',
+  'Portugal': 'ポルトガル',
+  'Poland': 'ポーランド',
+  'Philippines': 'フィリピン',
+  'Peru': 'ペルー',
+  'Paraguay': 'パラグアイ',
+  'Papua New Guinea': 'パプアニューギニア',
+  'Panama': 'パナマ',
+  'Palau': 'パラオ',
+  'Pakistan': 'パキスタン',
+  'Oman': 'オマーン',
+  'Norway': 'ノルウェー',
+  'North Korea': '北朝鮮',
+  'Nigeria': 'ナイジェリア',
+  'Niger': 'ニジェール',
+  'Nicaragua': 'ニカラグア',
+  'New Zealand': 'ニュージーランド',
+  'Niue': 'ニウエ',
+  'Cook Is.': 'クック諸島',
+  'Netherlands': 'オランダ',
+  'Aruba': 'アルバ',
+  'Curaçao': 'キュラソー',
+  'Nepal': 'ネパール',
+  'Nauru': 'ナウル',
+  'Namibia': 'ナミビア',
+  'Mozambique': 'モザンビーク',
+  'Morocco': 'モロッコ',
+  'W. Sahara': '西サハラ',
+  'Montenegro': 'モンテネグロ',
+  'Mongolia': 'モンゴル',
+  'Moldova': 'モルドバ',
+  'Monaco': 'モナコ',
+  'Mexico': 'メキシコ',
+  'Mauritius': 'モーリシャス',
+  'Mauritania': 'モーリタニア',
+  'Malta': 'マルタ',
+  'Mali': 'マリ',
+  'Maldives': 'モルディブ',
+  'Malaysia': 'マレーシア',
+  'Malawi': 'マラウイ',
+  'Madagascar': 'マダガスカル',
+  'Macedonia': '北マケドニア',
+  'Luxembourg': 'ルクセンブルク',
+  'Lithuania': 'リトアニア',
+  'Liechtenstein': 'リヒテンシュタイン',
+  'Libya': 'リビア',
+  'Liberia': 'リベリア',
+  'Lesotho': 'レソト',
+  'Lebanon': 'レバノン',
+  'Latvia': 'ラトビア',
+  'Laos': 'ラオス',
+  'Kyrgyzstan': 'キルギス',
+  'Kuwait': 'クウェート',
+  'Kosovo': 'コソボ',
+  'Kiribati': 'キリバス',
+  'Kenya': 'ケニア',
+  'Kazakhstan': 'カザフスタン',
+  'Jordan': 'ヨルダン',
+  'Japan': '日本',
+  'Jamaica': 'ジャマイカ',
+  'Italy': 'イタリア',
+  'Israel': 'イスラエル',
+  'Palestine': 'パレスチナ',
+  'Ireland': 'アイルランド',
+  'Iraq': 'イラク',
+  'Iran': 'イラン',
+  'Indonesia': 'インドネシア',
+  'India': 'インド',
+  'Iceland': 'アイスランド',
+  'Hungary': 'ハンガリー',
+  'Honduras': 'ホンジュラス',
+  'Haiti': 'ハイチ',
+  'Guyana': 'ガイアナ',
+  'Guinea-Bissau': 'ギニアビサウ',
+  'Guinea': 'ギニア',
+  'Guatemala': 'グアテマラ',
+  'Grenada': 'グレナダ',
+  'Greece': 'ギリシャ',
+  'Ghana': 'ガーナ',
+  'Germany': 'ドイツ',
+  'Georgia': 'ジョージア',
+  'Gambia': 'ガンビア',
+  'Gabon': 'ガボン',
+  'France': 'フランス',
+  'St. Pierre and Miquelon': 'サンピエール島・ミクロン島',
+  'Wallis and Futuna Is.': 'ウォリス・フツナ',
+  'St-Martin': 'サン・マルタン（フランス領）',
+  'St-Barthélemy': 'サン・バルテルミー',
+  'Fr. Polynesia': 'フランス領ポリネシア',
+  'New Caledonia': 'ニューカレドニア',
+  'Fr. S. Antarctic Lands': 'フランス領南方・南極地域',
+  'Åland': 'オーランド諸島',
+  'Finland': 'フィンランド',
+  'Fiji': 'フィジー',
+  'Ethiopia': 'エチオピア',
+  'Estonia': 'エストニア',
+  'Eritrea': 'エリトリア',
+  'Eq. Guinea': '赤道ギニア',
+  'El Salvador': 'エルサルバドル',
+  'Egypt': 'エジプト',
+  'Ecuador': 'エクアドル',
+  'Dominican Rep.': 'ドミニカ共和国',
+  'Dominica': 'ドミニカ国',
+  'Djibouti': 'ジブチ',
+  'Greenland': 'グリーンランド',
+  'Faeroe Is.': 'フェロー諸島',
+  'Denmark': 'デンマーク',
+  'Czechia': 'チェコ',
+  'N. Cyprus': '北キプロス',
+  'Cyprus': 'キプロス',
+  'Cuba': 'キューバ',
+  'Croatia': 'クロアチア',
+  'Côte d\'Ivoire': 'コートジボワール',
+  'Costa Rica': 'コスタリカ',
+  'Dem. Rep. Congo': 'コンゴ民主共和国',
+  'Congo': 'コンゴ共和国',
+  'Comoros': 'コモロ',
+  'Colombia': 'コロンビア',
+  'China': '中国',
+  'Macao': 'マカオ',
+  'Hong Kong': '香港',
+  'Chile': 'チリ',
+  'Chad': 'チャド',
+  'Central African Rep.': '中央アフリカ共和国',
+  'Cabo Verde': 'カーボベルデ',
+  'Canada': 'カナダ',
+  'Cameroon': 'カメルーン',
+  'Cambodia': 'カンボジア',
+  'Myanmar': 'ミャンマー',
+  'Burundi': 'ブルンジ',
+  'Burkina Faso': 'ブルキナファソ',
+  'Bulgaria': 'ブルガリア',
+  'Brunei': 'ブルネイ',
+  'Brazil': 'ブラジル',
+  'Botswana': 'ボツワナ',
+  'Bosnia and Herz.': 'ボスニア・ヘルツェゴビナ',
+  'Bolivia': 'ボリビア',
+  'Bhutan': 'ブータン',
+  'Benin': 'ベニン',
+  'Belize': 'ベリーズ',
+  'Belgium': 'ベルギー',
+  'Belarus': 'ベラルーシ',
+  'Barbados': 'バルバドス',
+  'Bangladesh': 'バングラデシュ',
+  'Bahrain': 'バーレーン',
+  'Bahamas': 'バハマ',
+  'Azerbaijan': 'アゼルバイジャン',
+  'Austria': 'オーストリア',
+  'Australia': 'オーストラリア',
+  'Indian Ocean Ter.': 'イギリス領インド洋地域',
+  'Heard I. and McDonald Is.': 'ハード島とマクドナルド諸島',
+  'Norfolk Island': 'ノーフォーク島',
+  'Ashmore and Cartier Is.': 'アシュモア・カルティエ諸島',
+  'Armenia': 'アルメニア',
+  'Argentina': 'アルゼンチン',
+  'Antigua and Barb.': 'アンティグア・バーブーダ',
+  'Angola': 'アンゴラ',
+  'Andorra': 'アンドラ',
+  'Algeria': 'アルジェリア',
+  'Albania': 'アルバニア',
+  'Afghanistan': 'アフガニスタン',
+  'Siachen Glacier': 'シアチェン氷河',
+  'Antarctica': '南極大陸',
+  'Sint Maarten': 'シント・マールテン',
+  'Dominican Republic': 'ドミニカ共和国',
+  'Bosnia': 'ボスニア・ヘルツェゴビナ',
+  'Solomon Islands': 'ソロモン諸島',
+  'South Sudan': '南スーダン',
+  'Ivory Coast': 'コートジボワール',
+  'DR Congo': 'コンゴ民主共和国',
+  'Central African Republic': '中央アフリカ共和国',
+  'Equatorial Guinea': '赤道ギニア',
+  'Western Sahara': '西サハラ',
+  'Eswatini': 'エスワティニ',
+  'French Guiana': 'フランス領ギアナ',
+  'Falkland Islands': 'フォークランド諸島',
 };
 
 let jaNames = {};
 let regions = {};
+let subregions = {};
+let capitals = {};
+let areas = {};
+let streak = 0;
+let bestStreak = Number(localStorage.getItem('geoQuizBestStreak') || 0);
+let soundEnabled = localStorage.getItem('geoQuizSound') !== 'off';
+let sessionId = 0;
+let pausedFromState = null;
+let audioCtx = null; // world-countries の subregion（北米/中米/南米/カリブ等）
 
 function normalizeId(id) {
   if (id === undefined || id === null) return null;
@@ -500,14 +828,23 @@ async function loadTranslations() {
   try {
     const data = await fetch('https://cdn.jsdelivr.net/npm/world-countries@4.0.0/countries.json').then(r => r.json());
     data.forEach(c => {
+      // world-countries の翻訳キーは ISO 639-2 の 'jpn'（'ja' ではない）。
+      // 'ja' で引くと常に空になり、日本語名がフォールバック頼みになる。
+      const ja = c.translations?.jpn?.common || c.translations?.ja?.common;
       if (c.ccn3) {
         const key = normalizeId(c.ccn3);
-        if (c.translations?.ja?.common) jaNames[key] = c.translations.ja.common;
+        if (ja) jaNames[key] = ja;
         if (c.region) regions[key] = c.region;
+        if (c.subregion) subregions[key] = c.subregion;
+        if (c.capital?.[0]) capitals[key] = c.capital[0];
+        if (c.area != null) areas[key] = c.area;
       }
       if (c.cca3) {
-        if (c.translations?.ja?.common) jaNames[c.cca3] = c.translations.ja.common;
+        if (ja) jaNames[c.cca3] = ja;
         if (c.region) regions[c.cca3] = c.region;
+        if (c.subregion) subregions[c.cca3] = c.subregion;
+        if (c.capital?.[0]) capitals[c.cca3] = c.capital[0];
+        if (c.area != null) areas[c.cca3] = c.area;
       }
     });
   } catch (e) {
@@ -517,11 +854,14 @@ async function loadTranslations() {
 
 function getJapaneseName(feature) {
   if (!feature) return '';
+  const name = feature.properties?.name;
+  // Atlas名でのフォールバックを最優先する。idだけだと Ashmore諸島(id=036) が
+  // オーストラリアと同一idのため「オーストラリア」と表示されてしまう。
+  if (name && FALLBACK_JA[name]) return FALLBACK_JA[name];
   const idKey = normalizeId(feature.id);
   if (idKey && jaNames[idKey]) return jaNames[idKey];
   if (feature.properties?.iso_a3 && jaNames[feature.properties.iso_a3]) return jaNames[feature.properties.iso_a3];
-  const name = feature.properties?.name;
-  return FALLBACK_JA[name] || name || '不明な国';
+  return name || '不明な国';
 }
 
 function drawBaseMap() {
@@ -552,11 +892,16 @@ function redrawMap() {
 }
 
 function findCountry(lon, lat) {
-  const pt = turf.point([lon, lat]);
-  for (const f of countries.features) {
-    const b = f._bbox;
-    if (b && (lon < b[0] - 0.5 || lon > b[2] + 0.5 || lat < b[1] - 0.5 || lat > b[3] + 0.5)) continue;
-    try { if (turf.booleanPointInPolygon(pt, f)) return f; } catch {}
+  // 日付変更線をまたぐ国はポリゴンが180度で切れているため、lon±360の
+  // 等価な点でも判定する（ロシア東端やフィジー東端の数km分の取りこぼし対策）。
+  for (const off of [0, 360, -360]) {
+    const testLon = lon + off;
+    const pt = turf.point([testLon, lat]);
+    for (const f of countries.features) {
+      const b = f._bbox;
+      if (b && (testLon < b[0] - 0.5 || testLon > b[2] + 0.5 || lat < b[1] - 0.5 || lat > b[3] + 0.5)) continue;
+      try { if (turf.booleanPointInPolygon(pt, f)) return f; } catch {}
+    }
   }
   return null;
 }
@@ -569,6 +914,106 @@ const timeGauge = document.getElementById('time-gauge');
 const $score = document.getElementById('score');
 const $menu = document.getElementById('menu-screen');
 const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+function setScore() {
+  $score.textContent = `スコア: ${score} / ${total}`;
+  updateStatsUI();
+}
+function updateStatsUI() {
+  const acc = total ? Math.round(score / total * 100) + '%' : '—';
+  const s = document.getElementById('stat-streak');
+  const a = document.getElementById('stat-acc');
+  const b = document.getElementById('stat-best');
+  if (s) { s.textContent = streak; s.classList.toggle('hot', streak >= 3); }
+  if (a) a.textContent = acc;
+  if (b) b.textContent = bestStreak + '連続';
+  const mb = document.getElementById('menu-best-streak');
+  if (mb) mb.textContent = bestStreak;
+}
+function beep(freq, dur = 0.12, type = 'sine', delay = 0) {
+  if (!soundEnabled) return;
+  try {
+    audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+    const t = audioCtx.currentTime + delay;
+    const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+    o.type = type; o.frequency.value = freq;
+    g.gain.setValueAtTime(0.12, t); g.gain.exponentialRampToValueAtTime(0.001, t + dur);
+    o.connect(g); g.connect(audioCtx.destination);
+    o.start(t); o.stop(t + dur);
+  } catch {}
+}
+function playCorrect() { beep(660, 0.12); beep(880, 0.18, 'sine', 0.1); }
+function playWrong() { beep(160, 0.25, 'sawtooth'); }
+function flash(color) {
+  const el = document.getElementById('flash');
+  el.style.background = color; el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 320);
+}
+function shakeScreen() {
+  document.body.classList.add('shake');
+  setTimeout(() => document.body.classList.remove('shake'), 420);
+}
+function burstConfetti(n = 42) {
+  const box = document.getElementById('confetti');
+  const colors = ['#4ade80', '#60a5fa', '#fbbf24', '#f472b6', '#a78bfa'];
+  for (let i = 0; i < n; i++) {
+    const d = document.createElement('div');
+    d.className = 'confetti-piece';
+    d.style.left = Math.random() * 100 + 'vw';
+    d.style.background = colors[i % colors.length];
+    d.style.animationDelay = (Math.random() * 0.25) + 's';
+    d.style.transform = `rotate(${Math.random() * 360}deg)`;
+    box.appendChild(d);
+    setTimeout(() => d.remove(), 1700);
+  }
+}
+let toastTimer = null;
+function showToast(text) {
+  const el = document.getElementById('toast');
+  el.textContent = text; el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 1800);
+}
+function getCountryInfo(feature) {
+  const idKey = normalizeId(feature.id);
+  const capital = capitals[idKey] || capitals[feature.properties?.iso_a3] || null;
+  const area = areas[idKey] ?? areas[feature.properties?.iso_a3];
+  const regionJa = getRegionHint(feature) || '—';
+  return {
+    capital,
+    regionJa,
+    area: area == null ? '—' : Math.round(area).toLocaleString() + ' km²',
+  };
+}
+function showInfoCard(feature, label) {
+  const info = getCountryInfo(feature);
+  const el = document.getElementById('info-card');
+  el.innerHTML = `<div class="info-label">${label}</div><div class="info-name">${getJapaneseName(feature)}</div><div class="info-rows"><div><span>首都</span><b>${info.capital || '—'}</b></div><div><span>地域</span><b>${info.regionJa}</b></div><div><span>面積</span><b>${info.area}</b></div></div>`;
+  el.classList.add('show');
+}
+function hideInfoCard() { document.getElementById('info-card').classList.remove('show'); }
+function pauseGame() {
+  if (state !== 'playing') return;
+  pausedFromState = state;
+  pauseTimer(); setLock(true); state = 'paused';
+  document.getElementById('pause-overlay').classList.add('show');
+}
+function resumeGame() {
+  if (state !== 'paused') return;
+  document.getElementById('pause-overlay').classList.remove('show');
+  state = pausedFromState || 'playing'; pausedFromState = null;
+  setLock(false); startTimer();
+}
+function restartGame() {
+  sessionId++;
+  pauseTimer();
+  hideInfoCard(); hideCenterMsg();
+  document.getElementById('pause-overlay').classList.remove('show');
+  score = 0; total = 0; streak = 0; attemptCounted = false;
+  setScore(); resetColors(); stopGlow();
+  state = 'menu';
+  startQuestion();
+}
 
 function setLock(lock) {
   isLocked = lock;
@@ -603,10 +1048,14 @@ function timerLoop(now) {
 
   if (!hint1Shown && timeLeft <= 20) {
     hint1Shown = true;
-    showHint(getHemisphereHint(target));
+    try { showHint(getHemisphereHint(target)).catch(e => console.warn('hint failed', e)); }
+    catch (e) { console.warn('hint failed', e); }
   } else if (!hint2Shown && timeLeft <= 10) {
     hint2Shown = true;
-    showHint(getRegionHint(target));
+    try {
+      const hint = getRegionHint(target);
+      if (hint) showHint(hint).catch(e => console.warn('hint failed', e));
+    } catch (e) { console.warn('hint failed', e); }
   }
 
   if (timerRunning) timerId = requestAnimationFrame(timerLoop);
@@ -614,6 +1063,9 @@ function timerLoop(now) {
 
 function updateGauge() {
   const pct = timeLeft / 30;
+  const t = document.getElementById('time-text');
+  if (t) t.textContent = Math.ceil(timeLeft);
+  timeGaugeWrap.classList.toggle('low', timeLeft <= 10);
   timeGauge.style.transform = `scaleX(${pct})`;
   if (timeLeft > 20) timeGauge.style.background = '#4ade80';
   else if (timeLeft > 10) timeGauge.style.background = '#fbbf24';
@@ -640,21 +1092,32 @@ function getHemisphereHint(feature) {
 
 function getRegionHint(feature) {
   const idKey = normalizeId(feature.id);
+  // subregion があればそれを優先する。緯度12度で南北を分ける旧方式では
+  // パナマやコスタリカ（緯度約9度）が「南アメリカ」になってしまう。
+  const sub = subregions[idKey] || subregions[feature.properties?.iso_a3];
+  const subMap = {
+    'Northern America': '北アメリカ', 'North America': '北アメリカ',
+    'South America': '南アメリカ', 'Central America': '中央アメリカ',
+    'Caribbean': 'カリブ海',
+  };
+  if (sub && subMap[sub]) return subMap[sub];
   let region = regions[idKey] || regions[feature.properties?.iso_a3];
-  if (!region) return 'アジア';
+  // 地域不明のときに「アジア」と嘘のヒントを出すのはやめ、ヒントなしにする。
+  if (!region) return null;
   const map = {
     'Africa': 'アフリカ', 'Americas': 'アメリカ大陸', 'Asia': 'アジア',
     'Europe': 'ヨーロッパ', 'Oceania': 'オセアニア', 'Antarctic': '南極',
   };
-  let ja = map[region] || region;
   if (region === 'Americas') {
+    if (!feature._bbox) return 'アメリカ大陸';
     const centerLat = (feature._bbox[1] + feature._bbox[3]) / 2;
-    ja = centerLat > 12 ? '北アメリカ' : '南アメリカ';
+    return centerLat > 12 ? '北アメリカ' : '南アメリカ';
   }
-  return ja;
+  return map[region] || region;
 }
 
 async function showHint(text) {
+  const sid = sessionId;
   pauseTimer();
   setLock(true);
   state = 'hint';
@@ -669,11 +1132,13 @@ async function showHint(text) {
   hintText.classList.remove('no-transition');
 
   await sleep(2000);
+  if (sid !== sessionId) return;
 
   hintText.classList.remove('center');
   hintText.classList.add('corner');
 
   await sleep(600);
+  if (sid !== sessionId) return;
 
   timeGaugeWrap.classList.add('active');
   setLock(false);
@@ -688,12 +1153,14 @@ function resetColors() {
 }
 
 function pickTarget() {
-  const list = countries.features.filter(f => f.geometry && f.properties?.name !== 'Antarctica');
+  const list = countries.features.filter(f => f.geometry && f.properties?.name !== 'Antarctica' && !NON_COUNTRY_TARGETS.has(f.properties?.name));
   target = list[Math.floor(Math.random() * list.length)];
 }
 
 async function startQuestion() {
   if (!countries) return;
+  const sid = sessionId;
+  hideInfoCard();
   state = 'showing';
   setLock(true);
   resetColors();
@@ -701,6 +1168,7 @@ async function startQuestion() {
   pickTarget();
 
   timeGaugeWrap.classList.remove('active');
+  attemptCounted = false;
   timeLeft = 30;
   hint1Shown = false;
   hint2Shown = false;
@@ -709,7 +1177,11 @@ async function startQuestion() {
   hintText.className = 'announce-style';
   hintText.textContent = '';
 
-  questionTitle.textContent = getJapaneseName(target);
+  const targetNameJa = getJapaneseName(target);
+  questionTitle.textContent = targetNameJa;
+  // 長い国名が画面からはみ出さないよう、文字数でフォントを絞る。
+  questionTitle.style.fontSize = targetNameJa.length > 12 ? 'clamp(1.1rem, 3vw, 2rem)'
+    : targetNameJa.length > 8 ? 'clamp(1.4rem, 4vw, 2.8rem)' : '';
   questionTitle.classList.add('no-transition');
   questionTitle.classList.remove('corner');
   questionTitle.classList.add('center');
@@ -717,11 +1189,13 @@ async function startQuestion() {
   questionTitle.classList.remove('no-transition');
 
   await sleep(3000);
+  if (sid !== sessionId) return;
 
   questionTitle.classList.remove('center');
   questionTitle.classList.add('corner');
 
   await sleep(600);
+  if (sid !== sessionId) return;
 
   timeGaugeWrap.classList.add('active');
   setLock(false);
@@ -730,17 +1204,23 @@ async function startQuestion() {
 }
 
 async function showCorrect() {
+  const sid = sessionId;
   pauseTimer();
   setLock(true);
   state = 'feedback';
+  streak++;
+  if (streak > bestStreak) { bestStreak = streak; localStorage.setItem('geoQuizBestStreak', String(bestStreak)); }
+  setScore();
 
   timeGaugeWrap.classList.remove('active');
   correctMark = target;
   redrawMap();
   startGlow(target, '#22c55e');
-
-  showCenterMsg('正解！', '#4ade80');
+  playCorrect(); burstConfetti(); flash('#22c55e');
+  showCenterMsg(streak >= 2 ? `正解！ ${streak}連続！` : '正解！', '#4ade80');
+  showInfoCard(target, '正解');
   await sleep(1500);
+  if (sid !== sessionId) return;
   hideCenterMsg();
 
   const curPos = camera.position.clone();
@@ -752,14 +1232,18 @@ async function showCorrect() {
   correctMark = null;
   redrawMap();
   await sleep(300);
+  if (sid !== sessionId) return;
 
   startQuestion();
 }
 
 async function showWrong(picked) {
+  const sid = sessionId;
   pauseTimer();
   setLock(true);
   state = 'feedback';
+  streak = 0; setScore();
+  playWrong(); shakeScreen(); flash('#ef4444');
   wrongMarks.add(picked);
   redrawMap();
 
@@ -769,12 +1253,15 @@ async function showWrong(picked) {
   setTimeout(() => { timeGauge.style.transition = ''; }, 600);
 
   showCenterMsg(`ここは ${getJapaneseName(picked)} です`, '#f87171');
+  showInfoCard(picked, '不正解 — ここは');
   await sleep(3000);
-  hideCenterMsg();
+  if (sid !== sessionId) return;
+  hideCenterMsg(); hideInfoCard();
 
   wrongMarks.delete(picked);
   redrawMap();
   await sleep(400);
+  if (sid !== sessionId) return;
 
   if (timeLeft <= 0) {
     onTimeUp();
@@ -787,16 +1274,26 @@ async function showWrong(picked) {
 }
 
 async function onTimeUp() {
+  const sid = sessionId;
   pauseTimer();
   setLock(true);
   state = 'feedback';
+  streak = 0; setScore();
+  playWrong(); flash('#ef4444');
+  if (!attemptCounted) {
+    attemptCounted = true;
+    total++;
+    setScore();
+  }
 
   timeGaugeWrap.classList.remove('active');
   wrongMarks.clear();
   redrawMap();
 
   showCenterMsg('時間切れ！', '#f87171');
+  showInfoCard(target, '時間切れ — 正解は');
   await sleep(2000);
+  if (sid !== sessionId) return;
   hideCenterMsg();
 
   correctMark = target;
@@ -812,6 +1309,7 @@ async function onTimeUp() {
   });
 
   await sleep(5000);
+  if (sid !== sessionId) return;
 
   // その場で少しズームアウト（グローは継続）
   const curPos = camera.position.clone();
@@ -823,17 +1321,23 @@ async function onTimeUp() {
   correctMark = null;
   redrawMap();
   await sleep(300);
+  if (sid !== sessionId) return;
+  hideInfoCard();
 
   startQuestion();
 }
 
 async function init() {
-  await loadTranslations();
+  try {
+    await loadTranslations();
 
-  const topology = await fetch(
-    'https://cdn.jsdelivr.net/npm/world-atlas@2/countries-50m.json'
-  ).then(r => r.json());
-  countries = topojson.feature(topology, topology.objects.countries);
+    const res = await fetch(
+      'https://cdn.jsdelivr.net/npm/world-atlas@2/countries-50m.json',
+      { signal: AbortSignal.timeout(20000) }
+    );
+    if (!res.ok) throw new Error(`world-atlas fetch failed: ${res.status}`);
+    const topology = await res.json();
+    countries = topojson.feature(topology, topology.objects.countries);
 
   countries.features.forEach(f => {
     if (!f.geometry) return;
@@ -842,14 +1346,44 @@ async function init() {
 
   drawBaseMap();
   redrawMap();
-  $score.textContent = `スコア: 0 / 0`;
+  setScore();
 
   $menu.innerHTML = `
-    <h1>GEO QUIZ</h1>
-    <div class="start-text">PUSH ENTER TO START</div>
+    <div class="menu-card">
+      <div class="menu-eyebrow">WORLD GEOGRAPHY</div>
+      <h1>GEO QUIZ</h1>
+      <p class="menu-sub">地球儀を回して、国を当てよう</p>
+      <div class="howto">
+        <div><b>1</b>国名が大きく表示される</div>
+        <div><b>2</b>地球儀をドラッグして回す</div>
+        <div><b>3</b>その国をタップ！ 30秒以内に</div>
+      </div>
+      <div class="menu-best">ベスト連続正解：<span id="menu-best-streak">${bestStreak}</span>連続</div>
+      <button class="menu-btn" type="button">スタート</button>
+      <div class="start-text">ENTER でもスタート</div>
+    </div>
   `;
   $menu.classList.remove('hidden');
   state = 'menu';
+  updateStatsUI();
+  return true;
+  } catch (e) {
+    console.error('init failed', e);
+    // 取得失敗で LOADING のまま固まらないよう、再試行できる表示にする。
+    $menu.innerHTML = `
+      <h1>GEO QUIZ</h1>
+      <div class="start-text">読み込みに失敗しました</div>
+      <div class="loading">タップ / ENTER で再試行</div>
+    `;
+    $menu.classList.remove('hidden');
+    state = 'error';
+    return false;
+  }
+}
+
+function retryInit() {
+  $menu.innerHTML = '<div class="loading">LOADING...</div>';
+  init().then(started => { if (started) animate(); });
 }
 
 async function startGame() {
@@ -873,14 +1407,22 @@ function tapToLonLat(event) {
 }
 
 let downPos = null;
+let downPointerId = null;
 renderer.domElement.addEventListener('pointerdown', e => {
+  // 2本目の指（ピンチ中）はタップにしない。
+  if (downPos !== null) { downPos = null; downPointerId = null; return; }
   downPos = { x: e.clientX, y: e.clientY };
+  downPointerId = e.pointerId;
+});
+renderer.domElement.addEventListener('pointercancel', e => {
+  if (e.pointerId === downPointerId) { downPos = null; downPointerId = null; }
 });
 renderer.domElement.addEventListener('pointerup', e => {
   if (state !== 'playing' || isLocked) return;
-  if (!downPos) return;
+  if (!downPos || e.pointerId !== downPointerId) return;
   const moved = Math.hypot(e.clientX - downPos.x, e.clientY - downPos.y);
   downPos = null;
+  downPointerId = null;
   if (moved > 6) return;
 
   const hit = tapToLonLat(e);
@@ -888,28 +1430,43 @@ renderer.domElement.addEventListener('pointerup', e => {
 
   const picked = findCountry(hit.lon, hit.lat);
   if (!picked) {
-    showCenterMsg('海の上です', '#f87171');
-    setTimeout(() => { if (state === 'playing') hideCenterMsg(); }, 1000);
+    showToast('海の上です — 陸をタップしてね');
     return;
   }
 
   total++;
+  attemptCounted = true;
   if (picked === target) {
     score++;
-    $score.textContent = `スコア: ${score} / ${total}`;
+    setScore();
     showCorrect();
   } else {
-    $score.textContent = `スコア: ${score} / ${total}`;
+    setScore();
     showWrong(picked);
   }
 });
 
 window.addEventListener('keydown', e => {
   if (e.key === 'Enter' && state === 'menu') startGame();
+  else if (e.key === 'Enter' && state === 'error') retryInit();
 });
 $menu.addEventListener('click', () => {
   if (state === 'menu') startGame();
+  else if (state === 'error') retryInit();
 });
+
+document.getElementById('btn-pause').addEventListener('click', e => { e.stopPropagation(); pauseGame(); });
+document.getElementById('btn-restart').addEventListener('click', e => { e.stopPropagation(); if (state === 'playing' || state === 'paused') restartGame(); else if (state === 'menu') startGame(); });
+document.getElementById('btn-resume').addEventListener('click', e => { e.stopPropagation(); resumeGame(); });
+document.getElementById('btn-restart-overlay').addEventListener('click', e => { e.stopPropagation(); restartGame(); });
+document.getElementById('btn-sound').addEventListener('click', e => {
+  e.stopPropagation();
+  soundEnabled = !soundEnabled;
+  localStorage.setItem('geoQuizSound', soundEnabled ? 'on' : 'off');
+  e.currentTarget.textContent = soundEnabled ? '🔊' : '🔇';
+});
+document.getElementById('btn-sound').textContent = soundEnabled ? '🔊' : '🔇';
+updateStatsUI();
 
 function animate() {
   requestAnimationFrame(animate);
@@ -939,7 +1496,7 @@ window.addEventListener('resize', () => {
   renderer.setSize(innerWidth, innerHeight);
 });
 
-init().then(animate);
+init().then(started => { if (started) animate(); });
 </script>
 </body>
 </html>
